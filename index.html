@@ -1,185 +1,216 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="apple-mobile-web-app-capable" content="yes">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
 
-<title>SBCMT QR受付</title>
+  <title>SBCMT QR受付</title>
 
-<style>
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #f5f5f5;
-  color: #111;
-  text-align: center;
-}
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      background: #f5f5f5;
+      color: #111;
+      text-align: center;
+    }
 
-.container {
-  padding: 50px 20px;
-}
+    .container {
+      padding: 50px 20px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
 
-h1 {
-  font-size: 36px;
-  margin-bottom: 5px;
-}
+    h1 {
+      font-size: 36px;
+      margin-bottom: 5px;
+    }
 
-.sub {
-  font-size: 18px;
-  color: #666;
-  margin-bottom: 50px;
-}
+    .sub {
+      font-size: 18px;
+      color: #666;
+      margin-bottom: 50px;
+    }
 
-button {
-  width: 100%;
-  padding: 25px;
-  border: 0;
-  border-radius: 18px;
-  background: #000;
-  color: #fff;
-  font-size: 24px;
-  font-weight: bold;
-}
+    button {
+      width: 100%;
+      padding: 25px;
+      border: 0;
+      border-radius: 18px;
+      background: #000;
+      color: #fff;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+    }
 
-#reader {
-  margin-top: 25px;
-  width: 100%;
-}
+    #reader {
+      margin-top: 25px;
+      width: 100%;
+    }
 
-#result {
-  display: none;
-  margin-top: 30px;
-  padding: 30px 20px;
-  background: #fff;
-  border-radius: 20px;
-  box-shadow: 0 5px 20px rgba(0,0,0,.12);
-}
+    #result {
+      display: none;
+      margin-top: 30px;
+      padding: 30px 20px;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 5px 20px rgba(0,0,0,.12);
+    }
 
-.label {
-  font-size: 16px;
-  color: #777;
-  margin-top: 15px;
-}
+    .label {
+      font-size: 16px;
+      color: #777;
+      margin-top: 15px;
+    }
 
-#name {
-  font-size: 36px;
-  font-weight: bold;
-  margin-top: 5px;
-}
+    #name {
+      font-size: 36px;
+      font-weight: bold;
+      margin-top: 5px;
+      word-break: break-word;
+    }
 
-#site {
-  font-size: 64px;
-  font-weight: 900;
-  margin-top: 5px;
-}
+    #site {
+      font-size: 64px;
+      font-weight: 900;
+      margin-top: 5px;
+      word-break: break-word;
+    }
 
-#error {
-  color: #c00;
-  margin-top: 20px;
-}
-</style>
+    #error {
+      color: #c00;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="container">
+  <div class="container">
 
-<h1>SBCMT</h1>
-<div class="sub">QR受付システム</div>
+    <h1>SBCMT</h1>
+    <div class="sub">QR受付システム</div>
 
-<button id="scanButton" onclick="startScanner()">
-QRを読み取る
-</button>
+    <button id="scanButton" onclick="startScanner()">
+      QRを読み取る
+    </button>
 
-<div id="reader"></div>
+    <div id="reader"></div>
 
-<div id="result">
-  <div class="label">名前</div>
-  <div id="name"></div>
+    <div id="result">
+      <div class="label">名前</div>
+      <div id="name"></div>
 
-  <div class="label">区画番号</div>
-  <div id="site"></div>
-</div>
+      <div class="label">区画番号</div>
+      <div id="site"></div>
+    </div>
 
-<div id="error"></div>
+    <div id="error"></div>
 
-</div>
+  </div>
 
-<script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
 
-<script>
-let scanner = null;
-let scanning = false;
+  <script>
+    let scanner = null;
+    let scanning = false;
 
-function startScanner() {
+    function showError(message) {
+      document.getElementById("error").textContent = message;
+    }
 
-  document.getElementById("result").style.display = "none";
-  document.getElementById("error").textContent = "";
+    function showResult(name, site) {
+      document.getElementById("name").textContent = name;
+      document.getElementById("site").textContent = site;
+      document.getElementById("result").style.display = "block";
+      document.getElementById("error").textContent = "";
+    }
 
-  if (scanning) return;
-
-  scanner = new Html5Qrcode("reader");
-  scanning = true;
-
-  scanner.start(
-    { facingMode: "environment" },
-    {
-      fps: 10,
-      qrbox: { width: 250, height: 250 }
-    },
-
-    function(decodedText) {
-
+    function readData(decodedText) {
       let name = "";
       let site = "";
 
       try {
-
         const data = JSON.parse(decodedText);
-
         name = data.name || "";
         site = data.site || "";
-
-      } catch(e) {
-
-        const params = new URLSearchParams(decodedText);
-
-        name = params.get("name") || "";
-        site = params.get("site") || "";
-
+      } catch (e) {
+        try {
+          const params = new URLSearchParams(decodedText);
+          name = params.get("name") || "";
+          site = params.get("site") || "";
+        } catch (e2) {
+          return false;
+        }
       }
 
       if (!name || !site) {
-        document.getElementById("error").textContent =
-          "受付用QRコードではありません";
+        return false;
+      }
+
+      showResult(name, site);
+      return true;
+    }
+
+    function startScanner() {
+      document.getElementById("result").style.display = "none";
+      document.getElementById("error").textContent = "";
+
+      if (scanning) {
         return;
       }
 
-      document.getElementById("name").textContent = name;
-      document.getElementById("site").textContent = site;
-      document.getElementById("result").style.display = "block";
+      scanner = new Html5Qrcode("reader");
+      scanning = true;
 
-      scanner.stop().then(function() {
+      scanner.start(
+        { facingMode: "environment" },
+        {
+          fps: 20,
+
+          qrbox: function(viewfinderWidth, viewfinderHeight) {
+            const size = Math.floor(
+              Math.min(viewfinderWidth, viewfinderHeight) * 0.8
+            );
+
+            return {
+              width: size,
+              height: size
+            };
+          },
+
+          aspectRatio: 1.0
+        },
+
+        function(decodedText) {
+
+          if (!readData(decodedText)) {
+            showError("受付用QRコードではありません");
+            return;
+          }
+
+          scanner.stop().then(function() {
+            scanning = false;
+            document.getElementById("reader").innerHTML = "";
+          }).catch(function() {
+            scanning = false;
+          });
+
+        },
+
+        function(errorMessage) {
+          // QRを探している間に発生する通常の読取エラーは表示しない
+        }
+
+      ).catch(function(err) {
         scanning = false;
-        document.getElementById("reader").innerHTML = "";
+        showError("カメラを起動できませんでした");
       });
-
-    },
-
-    function() {
-      // 読取待機中
     }
-  ).catch(function(err) {
-
-    scanning = false;
-
-    document.getElementById("error").textContent =
-      "カメラを起動できませんでした";
-
-  });
-}
-</script>
+  </script>
 
 </body>
 </html>
