@@ -1,174 +1,182 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="apple-mobile-web-app-capable" content="yes">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
 
-  <title>SBCMT QR受付</title>
+<title>SBCMT QR受付</title>
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+<style>
+* {
+  box-sizing: border-box;
+}
 
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
-      background: #f4f4f4;
-      color: #111;
-    }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  background: #f4f4f4;
+  color: #111;
+}
 
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 35px 20px;
-      text-align: center;
-    }
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 35px 20px;
+  text-align: center;
+}
 
-    h1 {
-      margin: 0;
-      font-size: 38px;
-    }
+h1 {
+  margin: 0;
+  font-size: 38px;
+}
 
-    .subtitle {
-      margin-top: 5px;
-      margin-bottom: 35px;
-      color: #666;
-      font-size: 17px;
-    }
+.subtitle {
+  margin-top: 5px;
+  margin-bottom: 35px;
+  color: #666;
+  font-size: 17px;
+}
 
-    button {
-      width: 100%;
-      border: none;
-      border-radius: 16px;
-      padding: 22px;
-      background: #111;
-      color: white;
-      font-size: 22px;
-      font-weight: bold;
-      cursor: pointer;
-    }
+button {
+  width: 100%;
+  border: none;
+  border-radius: 16px;
+  padding: 22px;
+  background: #111;
+  color: white;
+  font-size: 22px;
+  font-weight: bold;
+}
 
-    #reader {
-      width: 100%;
-      margin-top: 20px;
-      overflow: hidden;
-      border-radius: 16px;
-    }
+#reader {
+  width: 100%;
+  margin-top: 20px;
+  border-radius: 16px;
+  overflow: hidden;
+}
 
-    #status {
-      margin-top: 18px;
-      min-height: 24px;
-      font-size: 16px;
-      color: #666;
-    }
+#status {
+  margin-top: 15px;
+  font-size: 16px;
+  color: #666;
+  white-space: pre-wrap;
+}
 
-    #result {
-      display: none;
-      margin-top: 25px;
-      padding: 30px 20px;
-      background: white;
-      border-radius: 20px;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.12);
-    }
+#result {
+  display: none;
+  margin-top: 25px;
+  padding: 30px 20px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 18px rgba(0,0,0,.12);
+}
 
-    .label {
-      font-size: 15px;
-      color: #777;
-    }
+.label {
+  font-size: 15px;
+  color: #777;
+}
 
-    #name {
-      margin-top: 5px;
-      font-size: 36px;
-      font-weight: 800;
-    }
+#name {
+  margin-top: 5px;
+  font-size: 36px;
+  font-weight: 800;
+}
 
-    .site-label {
-      margin-top: 30px;
-    }
+.site-label {
+  margin-top: 30px;
+}
 
-    #site {
-      margin-top: 5px;
-      font-size: 72px;
-      line-height: 1;
-      font-weight: 900;
-    }
+#site {
+  margin-top: 5px;
+  font-size: 72px;
+  line-height: 1;
+  font-weight: 900;
+}
 
-    #error {
-      display: none;
-      margin-top: 25px;
-      padding: 20px;
-      border-radius: 16px;
-      background: #fff;
-      color: #c00000;
-      font-size: 20px;
-      font-weight: bold;
-    }
+#error {
+  display: none;
+  margin-top: 20px;
+  padding: 18px;
+  background: white;
+  border-radius: 16px;
+  color: #c00000;
+  font-size: 17px;
+  font-weight: bold;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
 
-    #nextButton {
-      display: none;
-      margin-top: 20px;
-      background: #555;
-    }
+#nextButton {
+  display: none;
+  margin-top: 20px;
+  background: #555;
+}
 
-    .test-area {
-      margin-top: 40px;
-      padding-top: 25px;
-      border-top: 1px solid #ddd;
-    }
+.test-area {
+  margin-top: 40px;
+  padding-top: 25px;
+  border-top: 1px solid #ddd;
+}
 
-    .test-title {
-      color: #888;
-      font-size: 13px;
-      margin-bottom: 10px;
-    }
+.test-title {
+  color: #888;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
 
-    #testButton {
-      background: white;
-      color: #333;
-      border: 1px solid #ccc;
-      font-size: 16px;
-      padding: 15px;
-    }
-  </style>
+#testButton {
+  background: white;
+  color: #333;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  padding: 15px;
+}
+</style>
 </head>
 
 <body>
 
 <div class="container">
 
-  <h1>SBCMT</h1>
-  <div class="subtitle">QR受付システム</div>
+<h1>SBCMT</h1>
+<div class="subtitle">QR受付システム</div>
 
-  <button id="scanButton" onclick="startScanner()">
-    QRを読み取る
-  </button>
+<button id="scanButton" onclick="startScanner()">
+QRを読み取る
+</button>
 
-  <div id="reader"></div>
+<div id="reader"></div>
 
-  <div id="status"></div>
+<div id="status"></div>
 
-  <div id="result">
-    <div class="label">名前</div>
-    <div id="name"></div>
+<div id="result">
 
-    <div class="label site-label">区画番号</div>
-    <div id="site"></div>
+  <div class="label">名前</div>
+  <div id="name"></div>
+
+  <div class="label site-label">区画番号</div>
+  <div id="site"></div>
+
+</div>
+
+<div id="error"></div>
+
+<button id="nextButton" onclick="resetScanner()">
+次の受付
+</button>
+
+<div class="test-area">
+
+  <div class="test-title">
+  動作確認用
   </div>
 
-  <div id="error"></div>
-
-  <button id="nextButton" onclick="resetScanner()">
-    次の受付
+  <button id="testButton" onclick="lookupParticipant('SBCMT-001')">
+  SBCMT-001 をテスト
   </button>
 
-  <div class="test-area">
-    <div class="test-title">動作確認用</div>
-    <button id="testButton" onclick="testParticipant()">
-      SBCMT-001 をテスト
-    </button>
-  </div>
+</div>
 
 </div>
 
@@ -177,247 +185,298 @@
 
 <script>
 
-  /*
-  ========================================
-  参加者データ
-  ========================================
+/* ==============================
+   参加者データ
+   ============================== */
 
-  QRコードにはIDだけを入れます。
+const participants = {
 
-  例：
-  SBCMT-001
+  "SBCMT-001": {
+    name: "小森様",
+    site: "001"
+  },
 
-  区画番号を変更する場合は、
-  site の数字だけ変更します。
+  "SBCMT-002": {
+    name: "テスト山田様",
+    site: "002"
+  },
 
-  QRコードを作り直す必要はありません。
-  */
+  "SBCMT-003": {
+    name: "テスト佐藤様",
+    site: "003"
+  }
 
-  const participants = {
-
-    "SBCMT-001": {
-      name: "小森様",
-      site: "001"
-    },
-
-    "SBCMT-002": {
-      name: "テスト山田様",
-      site: "002"
-    },
-
-    "SBCMT-003": {
-      name: "テスト佐藤様",
-      site: "003"
-    }
-
-  };
+};
 
 
-  let scanner = null;
-  let scanning = false;
-  let processing = false;
+/* ==============================
+   基本処理
+   ============================== */
+
+let html5QrCode = null;
+let scannerRunning = false;
+let alreadyRead = false;
 
 
-  function lookupParticipant(id) {
+function lookupParticipant(rawId) {
 
-    const cleanId = id.trim();
+  const id = String(rawId).trim();
 
-    if (!participants[cleanId]) {
-      showError(
-        "登録されていないQRコードです\n\n" +
-        cleanId
-      );
-      return;
-    }
+  if (!participants[id]) {
 
-    const person = participants[cleanId];
-
-    showParticipant(
-      person.name,
-      person.site
+    showError(
+      "登録されていないQRコードです。\n\n読取内容：\n" + id
     );
-  }
-
-
-  function showParticipant(name, site) {
-
-    processing = true;
-
-    document.getElementById("name").textContent = name;
-    document.getElementById("site").textContent = site;
-
-    document.getElementById("result").style.display = "block";
-    document.getElementById("error").style.display = "none";
-    document.getElementById("nextButton").style.display = "block";
-    document.getElementById("status").textContent = "受付QRを読み取りました";
 
     stopScanner();
+
+    return;
+  }
+
+  const person = participants[id];
+
+  document.getElementById("name").textContent =
+    person.name;
+
+  document.getElementById("site").textContent =
+    person.site;
+
+  document.getElementById("result").style.display =
+    "block";
+
+  document.getElementById("error").style.display =
+    "none";
+
+  document.getElementById("nextButton").style.display =
+    "block";
+
+  document.getElementById("status").textContent =
+    "受付QRを読み取りました";
+
+  stopScanner();
+}
+
+
+function showError(message) {
+
+  const box =
+    document.getElementById("error");
+
+  box.textContent = message;
+  box.style.display = "block";
+
+  document.getElementById("result").style.display =
+    "none";
+
+  document.getElementById("nextButton").style.display =
+    "block";
+}
+
+
+/* ==============================
+   カメラ起動
+   ============================== */
+
+async function startScanner() {
+
+  if (scannerRunning) {
+    return;
+  }
+
+  alreadyRead = false;
+
+  document.getElementById("result").style.display =
+    "none";
+
+  document.getElementById("error").style.display =
+    "none";
+
+  document.getElementById("nextButton").style.display =
+    "none";
+
+  document.getElementById("status").textContent =
+    "カメラを確認しています…";
+
+
+  if (typeof Html5Qrcode === "undefined") {
+
+    showError(
+      "QR読取プログラムを読み込めませんでした。\n" +
+      "インターネット接続を確認してください。"
+    );
+
+    return;
   }
 
 
-  function showError(message) {
+  try {
 
-    processing = true;
+    const cameras =
+      await Html5Qrcode.getCameras();
 
-    document.getElementById("result").style.display = "none";
+    if (!cameras || cameras.length === 0) {
 
-    const errorBox = document.getElementById("error");
+      showError(
+        "使用できるカメラが見つかりませんでした。"
+      );
 
-    errorBox.innerText = message;
-    errorBox.style.display = "block";
-
-    document.getElementById("nextButton").style.display = "block";
-    document.getElementById("status").textContent = "";
-
-    stopScanner();
-  }
-
-
-  async function startScanner() {
-
-    if (scanning) {
       return;
     }
 
-    processing = false;
 
-    document.getElementById("result").style.display = "none";
-    document.getElementById("error").style.display = "none";
-    document.getElementById("nextButton").style.display = "none";
+    /*
+      iPhoneでは通常、
+      カメラ一覧の最後側が背面カメラになります。
+    */
+
+    let selectedCamera =
+      cameras[cameras.length - 1].id;
+
+
+    for (let i = 0; i < cameras.length; i++) {
+
+      const label =
+        (cameras[i].label || "").toLowerCase();
+
+      if (
+        label.includes("back") ||
+        label.includes("rear") ||
+        label.includes("environment") ||
+        label.includes("背面")
+      ) {
+
+        selectedCamera =
+          cameras[i].id;
+
+        break;
+      }
+    }
+
+
+    html5QrCode =
+      new Html5Qrcode("reader");
+
 
     document.getElementById("status").textContent =
       "カメラを起動しています…";
 
-    try {
 
-      scanner = new Html5Qrcode("reader");
+    await html5QrCode.start(
 
-      const config = {
+      selectedCamera,
 
-        fps: 15,
+      {
+        fps: 10
+      },
 
-        qrbox: function(viewfinderWidth, viewfinderHeight) {
+      function(decodedText) {
 
-          const minimum =
-            Math.min(viewfinderWidth, viewfinderHeight);
-
-          const size =
-            Math.floor(minimum * 0.85);
-
-          return {
-            width: size,
-            height: size
-          };
-        },
-
-        aspectRatio: 1.0,
-
-        disableFlip: false
-
-      };
-
-
-      await scanner.start(
-
-        {
-          facingMode: {
-            ideal: "environment"
-          }
-        },
-
-        config,
-
-        function(decodedText) {
-
-          if (processing) {
-            return;
-          }
-
-          processing = true;
-
-          lookupParticipant(decodedText);
-
-        },
-
-        function(errorMessage) {
-          // QRを探している間の通常エラーは無視
+        if (alreadyRead) {
+          return;
         }
 
-      );
+        alreadyRead = true;
 
+        lookupParticipant(decodedText);
 
-      scanning = true;
+      },
 
-      document.getElementById("status").textContent =
-        "QRコードを枠内に映してください";
+      function(errorMessage) {
 
+        /*
+        QRを探している最中に発生する
+        通常のエラーなので何もしない
+        */
 
-    } catch (error) {
-
-      scanning = false;
-
-      document.getElementById("status").textContent = "";
-
-      showError(
-        "カメラを起動できませんでした。\n" +
-        "Safariのカメラ許可を確認してください。"
-      );
-
-    }
-
-  }
-
-
-  async function stopScanner() {
-
-    if (!scanner) {
-      scanning = false;
-      return;
-    }
-
-    try {
-
-      if (scanning) {
-        await scanner.stop();
       }
 
-    } catch (error) {
-      // 停止時エラーは無視
+    );
+
+
+    scannerRunning = true;
+
+    document.getElementById("status").textContent =
+      "QRコードをカメラに映してください";
+
+
+  } catch (error) {
+
+    scannerRunning = false;
+
+    let detail = "";
+
+    if (error) {
+      detail =
+        error.message ||
+        error.name ||
+        String(error);
     }
 
-    try {
-      scanner.clear();
-    } catch (error) {
-      // clearエラーは無視
+    showError(
+      "カメラを起動できませんでした。\n\n" +
+      "エラー内容：\n" +
+      detail
+    );
+
+  }
+
+}
+
+
+/* ==============================
+   カメラ停止
+   ============================== */
+
+async function stopScanner() {
+
+  if (!html5QrCode) {
+    scannerRunning = false;
+    return;
+  }
+
+  try {
+
+    if (scannerRunning) {
+      await html5QrCode.stop();
     }
 
-    scanner = null;
-    scanning = false;
-
+  } catch (error) {
   }
 
-
-  async function resetScanner() {
-
-    await stopScanner();
-
-    processing = false;
-
-    document.getElementById("result").style.display = "none";
-    document.getElementById("error").style.display = "none";
-    document.getElementById("nextButton").style.display = "none";
-    document.getElementById("status").textContent = "";
-
-    startScanner();
-
+  try {
+    html5QrCode.clear();
+  } catch (error) {
   }
 
+  html5QrCode = null;
+  scannerRunning = false;
 
-  function testParticipant() {
+}
 
-    lookupParticipant("SBCMT-001");
 
-  }
+/* ==============================
+   次の受付
+   ============================== */
+
+async function resetScanner() {
+
+  await stopScanner();
+
+  document.getElementById("result").style.display =
+    "none";
+
+  document.getElementById("error").style.display =
+    "none";
+
+  document.getElementById("nextButton").style.display =
+    "none";
+
+  document.getElementById("status").textContent =
+    "";
+
+  startScanner();
+
+}
 
 </script>
 
