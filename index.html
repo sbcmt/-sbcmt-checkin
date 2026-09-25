@@ -22,7 +22,7 @@ body {
 .container {
   max-width: 600px;
   margin: 0 auto;
-  padding: 35px 20px;
+  padding: 30px 20px 50px;
   text-align: center;
 }
 
@@ -39,11 +39,17 @@ h1 {
 }
 
 #databaseStatus {
-  margin-bottom: 25px;
+  margin-bottom: 12px;
   padding: 12px;
   border-radius: 12px;
   background: #e9e9e9;
   font-size: 14px;
+}
+
+#entryStatus {
+  margin-bottom: 22px;
+  font-size: 15px;
+  color: #555;
 }
 
 .ready {
@@ -58,10 +64,10 @@ button {
   width: 100%;
   border: none;
   border-radius: 16px;
-  padding: 22px;
+  padding: 20px;
   background: #111;
   color: white;
-  font-size: 22px;
+  font-size: 21px;
   font-weight: bold;
   cursor: pointer;
 }
@@ -93,6 +99,27 @@ button:disabled {
   box-shadow: 0 4px 18px rgba(0,0,0,.12);
 }
 
+#complete {
+  margin-bottom: 25px;
+  padding: 15px;
+  border-radius: 14px;
+  background: #e7f6ea;
+  color: #176b2c;
+  font-size: 32px;
+  font-weight: 900;
+}
+
+#alreadyEntered {
+  display: none;
+  margin-bottom: 25px;
+  padding: 15px;
+  border-radius: 14px;
+  background: #fff3cd;
+  color: #795500;
+  font-size: 26px;
+  font-weight: 900;
+}
+
 .label {
   font-size: 15px;
   color: #777;
@@ -100,7 +127,7 @@ button:disabled {
 
 #name {
   margin-top: 5px;
-  font-size: 36px;
+  font-size: 34px;
   font-weight: 800;
   word-break: break-word;
 }
@@ -114,6 +141,12 @@ button:disabled {
   font-size: 72px;
   line-height: 1;
   font-weight: 900;
+}
+
+#entryTime {
+  margin-top: 25px;
+  color: #666;
+  font-size: 15px;
 }
 
 #error {
@@ -134,6 +167,33 @@ button:disabled {
   margin-top: 20px;
   background: #555;
 }
+
+.adminArea {
+  margin-top: 50px;
+  padding-top: 25px;
+  border-top: 1px solid #ccc;
+}
+
+.adminTitle {
+  margin-bottom: 12px;
+  color: #777;
+  font-size: 13px;
+}
+
+#resetButton {
+  padding: 15px;
+  background: white;
+  color: #b00000;
+  border: 1px solid #b00000;
+  font-size: 16px;
+}
+
+.resetNote {
+  margin-top: 10px;
+  color: #888;
+  font-size: 12px;
+  line-height: 1.5;
+}
 </style>
 </head>
 
@@ -148,6 +208,10 @@ button:disabled {
     参加者リストを読み込んでいます…
   </div>
 
+  <div id="entryStatus">
+    入場済み 0名
+  </div>
+
   <button id="scanButton" onclick="startScanner()" disabled>
     QRを読み取る
   </button>
@@ -158,19 +222,57 @@ button:disabled {
 
   <div id="result">
 
-    <div class="label">名前</div>
+    <div id="complete">
+      入場完了
+    </div>
+
+    <div id="alreadyEntered">
+      入場済み
+    </div>
+
+    <div class="label">
+      名前
+    </div>
+
     <div id="name"></div>
 
-    <div class="label site-label">区画番号</div>
+    <div class="label site-label">
+      区画番号
+    </div>
+
     <div id="site"></div>
+
+    <div id="entryTime"></div>
 
   </div>
 
   <div id="error"></div>
 
-  <button id="nextButton" onclick="resetScanner()">
+  <button
+    id="nextButton"
+    onclick="resetScanner()">
     次の受付
   </button>
+
+
+  <div class="adminArea">
+
+    <div class="adminTitle">
+      管理
+    </div>
+
+    <button
+      id="resetButton"
+      onclick="resetEntryRecords()">
+      入場記録をリセット
+    </button>
+
+    <div class="resetNote">
+      テスト終了後に使用してください。<br>
+      参加者リストやQRは削除されません。
+    </div>
+
+  </div>
 
 </div>
 
@@ -180,14 +282,70 @@ button:disabled {
 <script>
 
 /* =====================================
-   参加者データ
+   基本データ
 ===================================== */
 
 let participants = {};
 
 let html5QrCode = null;
+
 let scannerRunning = false;
+
 let alreadyRead = false;
+
+
+/* =====================================
+   入場記録
+===================================== */
+
+function getEntryRecords() {
+
+  try {
+
+    const data =
+      localStorage.getItem(
+        "sbcmtEntryRecords"
+      );
+
+    if (!data) {
+      return {};
+    }
+
+    return JSON.parse(data);
+
+  } catch (error) {
+
+    return {};
+
+  }
+
+}
+
+
+function saveEntryRecords(records) {
+
+  localStorage.setItem(
+    "sbcmtEntryRecords",
+    JSON.stringify(records)
+  );
+
+}
+
+
+function updateEntryStatus() {
+
+  const records =
+    getEntryRecords();
+
+  const count =
+    Object.keys(records).length;
+
+  document.getElementById(
+    "entryStatus"
+  ).textContent =
+    "入場済み " + count + "名";
+
+}
 
 
 /* =====================================
@@ -197,56 +355,82 @@ let alreadyRead = false;
 async function loadParticipants() {
 
   const databaseStatus =
-    document.getElementById("databaseStatus");
+    document.getElementById(
+      "databaseStatus"
+    );
 
   const scanButton =
-    document.getElementById("scanButton");
+    document.getElementById(
+      "scanButton"
+    );
 
   try {
 
-    /*
-      ?t= を付けることで
-      CSV更新時のキャッシュ問題を防ぎます
-    */
+    const response =
+      await fetch(
+        "participants.csv?t=" +
+        Date.now()
+      );
 
-    const response = await fetch(
-      "participants.csv?t=" + Date.now()
-    );
 
     if (!response.ok) {
+
       throw new Error(
         "participants.csv を取得できません"
       );
+
     }
 
-    const text = await response.text();
+
+    const text =
+      await response.text();
+
 
     parseCSV(text);
 
+
     const count =
-      Object.keys(participants).length;
+      Object.keys(
+        participants
+      ).length;
+
 
     if (count === 0) {
+
       throw new Error(
         "参加者データが0件です"
       );
+
     }
 
+
     databaseStatus.textContent =
-      "参加者 " + count + "組 読み込み完了";
+      "参加者 " +
+      count +
+      "組 読み込み完了";
+
 
     databaseStatus.className =
       "ready";
 
-    scanButton.disabled = false;
+
+    scanButton.disabled =
+      false;
+
+
+    updateEntryStatus();
+
 
   } catch (error) {
+
 
     databaseStatus.textContent =
       "参加者リストを読み込めませんでした";
 
+
     databaseStatus.className =
       "errorStatus";
+
 
     showError(
       "participants.csv の読み込みに失敗しました。\n\n" +
@@ -266,23 +450,33 @@ function parseCSV(text) {
 
   participants = {};
 
-  /*
-    BOM除去
-  */
 
-  text = text.replace(/^\uFEFF/, "");
+  text =
+    text.replace(
+      /^\uFEFF/,
+      ""
+    );
+
 
   const rows =
     text.split(/\r?\n/);
+
 
   if (rows.length < 2) {
     return;
   }
 
+
   const headers =
-    parseCSVLine(rows[0]).map(
-      value => value.trim().toLowerCase()
+    parseCSVLine(
+      rows[0]
+    ).map(
+      value =>
+        value
+        .trim()
+        .toLowerCase()
     );
+
 
   const idIndex =
     headers.indexOf("id");
@@ -313,21 +507,39 @@ function parseCSV(text) {
     i++
   ) {
 
-    if (!rows[i].trim()) {
+
+    if (
+      !rows[i].trim()
+    ) {
       continue;
     }
 
+
     const columns =
-      parseCSVLine(rows[i]);
+      parseCSVLine(
+        rows[i]
+      );
+
 
     const id =
-      (columns[idIndex] || "").trim();
+      (
+        columns[idIndex] ||
+        ""
+      ).trim();
+
 
     const name =
-      (columns[nameIndex] || "").trim();
+      (
+        columns[nameIndex] ||
+        ""
+      ).trim();
+
 
     const site =
-      (columns[siteIndex] || "").trim();
+      (
+        columns[siteIndex] ||
+        ""
+      ).trim();
 
 
     if (!id) {
@@ -347,7 +559,6 @@ function parseCSV(text) {
 
 /* =====================================
    CSV 1行解析
-   カンマ・ダブルクォート対応
 ===================================== */
 
 function parseCSVLine(line) {
@@ -355,6 +566,7 @@ function parseCSVLine(line) {
   const result = [];
 
   let current = "";
+
   let insideQuotes = false;
 
 
@@ -364,10 +576,13 @@ function parseCSVLine(line) {
     i++
   ) {
 
-    const char = line[i];
+    const char =
+      line[i];
 
 
-    if (char === '"') {
+    if (
+      char === '"'
+    ) {
 
       if (
         insideQuotes &&
@@ -375,6 +590,7 @@ function parseCSVLine(line) {
       ) {
 
         current += '"';
+
         i++;
 
       } else {
@@ -389,7 +605,10 @@ function parseCSVLine(line) {
       !insideQuotes
     ) {
 
-      result.push(current);
+      result.push(
+        current
+      );
+
       current = "";
 
     } else {
@@ -401,7 +620,10 @@ function parseCSVLine(line) {
   }
 
 
-  result.push(current);
+  result.push(
+    current
+  );
+
 
   return result;
 
@@ -412,12 +634,19 @@ function parseCSVLine(line) {
    QR照合
 ===================================== */
 
-function lookupParticipant(rawId) {
+function lookupParticipant(
+  rawId
+) {
 
   const id =
-    String(rawId).trim();
+    String(
+      rawId
+    ).trim();
 
-  if (!participants[id]) {
+
+  if (
+    !participants[id]
+  ) {
 
     showError(
       "登録されていないQRコードです。\n\n" +
@@ -425,9 +654,16 @@ function lookupParticipant(rawId) {
       id
     );
 
+
     stopScanner();
 
+    document.getElementById(
+      "nextButton"
+    ).style.display =
+      "block";
+
     return;
+
   }
 
 
@@ -435,34 +671,127 @@ function lookupParticipant(rawId) {
     participants[id];
 
 
-  document.getElementById("name")
-    .textContent =
+  const records =
+    getEntryRecords();
+
+
+  document.getElementById(
+    "name"
+  ).textContent =
     person.name;
 
 
-  document.getElementById("site")
-    .textContent =
+  document.getElementById(
+    "site"
+  ).textContent =
     person.site;
 
 
-  document.getElementById("result")
-    .style.display =
-    "block";
-
-
-  document.getElementById("error")
-    .style.display =
+  document.getElementById(
+    "error"
+  ).style.display =
     "none";
 
 
-  document.getElementById("nextButton")
-    .style.display =
+  /*
+    すでに入場済みの場合
+  */
+
+  if (
+    records[id]
+  ) {
+
+    document.getElementById(
+      "complete"
+    ).style.display =
+      "none";
+
+
+    document.getElementById(
+      "alreadyEntered"
+    ).style.display =
+      "block";
+
+
+    document.getElementById(
+      "entryTime"
+    ).textContent =
+      "入場記録：" +
+      formatDateTime(
+        records[id].time
+      );
+
+
+    document.getElementById(
+      "status"
+    ).textContent =
+      "このQRはすでに受付済みです";
+
+
+  } else {
+
+
+    /*
+      初回入場
+    */
+
+    const now =
+      new Date();
+
+
+    records[id] = {
+      time:
+        now.toISOString()
+    };
+
+
+    saveEntryRecords(
+      records
+    );
+
+
+    document.getElementById(
+      "complete"
+    ).style.display =
+      "block";
+
+
+    document.getElementById(
+      "alreadyEntered"
+    ).style.display =
+      "none";
+
+
+    document.getElementById(
+      "entryTime"
+    ).textContent =
+      "受付時刻：" +
+      formatDateTime(
+        now.toISOString()
+      );
+
+
+    document.getElementById(
+      "status"
+    ).textContent =
+      "受付が完了しました";
+
+
+    updateEntryStatus();
+
+  }
+
+
+  document.getElementById(
+    "result"
+  ).style.display =
     "block";
 
 
-  document.getElementById("status")
-    .textContent =
-    "受付QRを読み取りました";
+  document.getElementById(
+    "nextButton"
+  ).style.display =
+    "block";
 
 
   stopScanner();
@@ -471,23 +800,80 @@ function lookupParticipant(rawId) {
 
 
 /* =====================================
+   日時表示
+===================================== */
+
+function formatDateTime(
+  isoString
+) {
+
+  const date =
+    new Date(
+      isoString
+    );
+
+
+  const month =
+    date.getMonth() + 1;
+
+  const day =
+    date.getDate();
+
+  const hour =
+    String(
+      date.getHours()
+    ).padStart(
+      2,
+      "0"
+    );
+
+  const minute =
+    String(
+      date.getMinutes()
+    ).padStart(
+      2,
+      "0"
+    );
+
+
+  return (
+    month +
+    "/" +
+    day +
+    " " +
+    hour +
+    ":" +
+    minute
+  );
+
+}
+
+
+/* =====================================
    エラー表示
 ===================================== */
 
-function showError(message) {
+function showError(
+  message
+) {
 
   const box =
-    document.getElementById("error");
+    document.getElementById(
+      "error"
+    );
+
 
   box.textContent =
     message;
+
 
   box.style.display =
     "block";
 
 
-  document.getElementById("result")
-    .style.display =
+  document.getElementById(
+    "result"
+  ).style.display =
     "none";
 
 }
@@ -499,31 +885,38 @@ function showError(message) {
 
 async function startScanner() {
 
-  if (scannerRunning) {
+  if (
+    scannerRunning
+  ) {
     return;
   }
 
 
-  alreadyRead = false;
+  alreadyRead =
+    false;
 
 
-  document.getElementById("result")
-    .style.display =
+  document.getElementById(
+    "result"
+  ).style.display =
     "none";
 
 
-  document.getElementById("error")
-    .style.display =
+  document.getElementById(
+    "error"
+  ).style.display =
     "none";
 
 
-  document.getElementById("nextButton")
-    .style.display =
+  document.getElementById(
+    "nextButton"
+  ).style.display =
     "none";
 
 
-  document.getElementById("status")
-    .textContent =
+  document.getElementById(
+    "status"
+  ).textContent =
     "カメラを確認しています…";
 
 
@@ -543,8 +936,10 @@ async function startScanner() {
 
   try {
 
+
     const cameras =
-      await Html5Qrcode.getCameras();
+      await Html5Qrcode
+      .getCameras();
 
 
     if (
@@ -560,7 +955,9 @@ async function startScanner() {
 
 
     let selectedCamera =
-      cameras[cameras.length - 1].id;
+      cameras[
+        cameras.length - 1
+      ].id;
 
 
     for (
@@ -569,16 +966,27 @@ async function startScanner() {
       i++
     ) {
 
+
       const label =
-        (cameras[i].label || "")
-        .toLowerCase();
+        (
+          cameras[i].label ||
+          ""
+        ).toLowerCase();
 
 
       if (
-        label.includes("back") ||
-        label.includes("rear") ||
-        label.includes("environment") ||
-        label.includes("背面")
+        label.includes(
+          "back"
+        ) ||
+        label.includes(
+          "rear"
+        ) ||
+        label.includes(
+          "environment"
+        ) ||
+        label.includes(
+          "背面"
+        )
       ) {
 
         selectedCamera =
@@ -592,7 +1000,9 @@ async function startScanner() {
 
 
     html5QrCode =
-      new Html5Qrcode("reader");
+      new Html5Qrcode(
+        "reader"
+      );
 
 
     await html5QrCode.start(
@@ -603,13 +1013,20 @@ async function startScanner() {
         fps: 10
       },
 
-      function(decodedText) {
+      function(
+        decodedText
+      ) {
 
-        if (alreadyRead) {
+        if (
+          alreadyRead
+        ) {
           return;
         }
 
-        alreadyRead = true;
+
+        alreadyRead =
+          true;
+
 
         lookupParticipant(
           decodedText
@@ -617,10 +1034,12 @@ async function startScanner() {
 
       },
 
-      function(errorMessage) {
+      function(
+        errorMessage
+      ) {
 
         /*
-        読取待機中の通常エラー
+          読取待機中
         */
 
       }
@@ -628,20 +1047,26 @@ async function startScanner() {
     );
 
 
-    scannerRunning = true;
+    scannerRunning =
+      true;
 
 
-    document.getElementById("status")
-      .textContent =
+    document.getElementById(
+      "status"
+    ).textContent =
       "QRコードをカメラに映してください";
 
 
-  } catch (error) {
+  } catch (
+    error
+  ) {
 
-    scannerRunning = false;
+
+    scannerRunning =
+      false;
 
 
-    let detail =
+    const detail =
       error &&
       (
         error.message ||
@@ -667,7 +1092,9 @@ async function startScanner() {
 
 async function stopScanner() {
 
-  if (!html5QrCode) {
+  if (
+    !html5QrCode
+  ) {
 
     scannerRunning =
       false;
@@ -679,13 +1106,17 @@ async function stopScanner() {
 
   try {
 
-    if (scannerRunning) {
+    if (
+      scannerRunning
+    ) {
 
       await html5QrCode.stop();
 
     }
 
-  } catch (error) {
+  } catch (
+    error
+  ) {
   }
 
 
@@ -693,7 +1124,9 @@ async function stopScanner() {
 
     html5QrCode.clear();
 
-  } catch (error) {
+  } catch (
+    error
+  ) {
   }
 
 
@@ -715,23 +1148,27 @@ async function resetScanner() {
   await stopScanner();
 
 
-  document.getElementById("result")
-    .style.display =
+  document.getElementById(
+    "result"
+  ).style.display =
     "none";
 
 
-  document.getElementById("error")
-    .style.display =
+  document.getElementById(
+    "error"
+  ).style.display =
     "none";
 
 
-  document.getElementById("nextButton")
-    .style.display =
+  document.getElementById(
+    "nextButton"
+  ).style.display =
     "none";
 
 
-  document.getElementById("status")
-    .textContent =
+  document.getElementById(
+    "status"
+  ).textContent =
     "";
 
 
@@ -741,12 +1178,119 @@ async function resetScanner() {
 
 
 /* =====================================
-   起動時
+   入場記録 全リセット
+===================================== */
+
+async function resetEntryRecords() {
+
+  const records =
+    getEntryRecords();
+
+
+  const count =
+    Object.keys(
+      records
+    ).length;
+
+
+  if (
+    count === 0
+  ) {
+
+    alert(
+      "現在、入場記録はありません。"
+    );
+
+    return;
+
+  }
+
+
+  const firstConfirm =
+    confirm(
+      "入場済み " +
+      count +
+      "名の記録をすべてリセットします。\n\n" +
+      "テスト終了後以外は実行しないでください。\n\n" +
+      "リセットしますか？"
+    );
+
+
+  if (
+    !firstConfirm
+  ) {
+    return;
+  }
+
+
+  const secondConfirm =
+    confirm(
+      "本当にすべての入場記録を削除しますか？"
+    );
+
+
+  if (
+    !secondConfirm
+  ) {
+    return;
+  }
+
+
+  await stopScanner();
+
+
+  localStorage.removeItem(
+    "sbcmtEntryRecords"
+  );
+
+
+  updateEntryStatus();
+
+
+  document.getElementById(
+    "result"
+  ).style.display =
+    "none";
+
+
+  document.getElementById(
+    "error"
+  ).style.display =
+    "none";
+
+
+  document.getElementById(
+    "nextButton"
+  ).style.display =
+    "none";
+
+
+  document.getElementById(
+    "status"
+  ).textContent =
+    "";
+
+
+  alert(
+    "入場記録をリセットしました。\n\n本番受付を開始できます。"
+  );
+
+}
+
+
+/* =====================================
+   起動
 ===================================== */
 
 window.addEventListener(
   "DOMContentLoaded",
-  loadParticipants
+  function() {
+
+    loadParticipants();
+
+    updateEntryStatus();
+
+  }
 );
 
 </script>
