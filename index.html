@@ -8,209 +8,418 @@
   <title>SBCMT QR受付</title>
 
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
-      background: #f5f5f5;
+      background: #f4f4f4;
       color: #111;
-      text-align: center;
     }
 
     .container {
-      padding: 50px 20px;
-      max-width: 700px;
+      max-width: 600px;
       margin: 0 auto;
+      padding: 35px 20px;
+      text-align: center;
     }
 
     h1 {
-      font-size: 36px;
-      margin-bottom: 5px;
+      margin: 0;
+      font-size: 38px;
     }
 
-    .sub {
-      font-size: 18px;
+    .subtitle {
+      margin-top: 5px;
+      margin-bottom: 35px;
       color: #666;
-      margin-bottom: 50px;
+      font-size: 17px;
     }
 
     button {
       width: 100%;
-      padding: 25px;
-      border: 0;
-      border-radius: 18px;
-      background: #000;
-      color: #fff;
-      font-size: 24px;
+      border: none;
+      border-radius: 16px;
+      padding: 22px;
+      background: #111;
+      color: white;
+      font-size: 22px;
       font-weight: bold;
       cursor: pointer;
     }
 
     #reader {
-      margin-top: 25px;
       width: 100%;
+      margin-top: 20px;
+      overflow: hidden;
+      border-radius: 16px;
+    }
+
+    #status {
+      margin-top: 18px;
+      min-height: 24px;
+      font-size: 16px;
+      color: #666;
     }
 
     #result {
       display: none;
-      margin-top: 30px;
+      margin-top: 25px;
       padding: 30px 20px;
-      background: #fff;
+      background: white;
       border-radius: 20px;
-      box-shadow: 0 5px 20px rgba(0,0,0,.12);
+      box-shadow: 0 4px 18px rgba(0,0,0,0.12);
     }
 
     .label {
-      font-size: 16px;
+      font-size: 15px;
       color: #777;
-      margin-top: 15px;
     }
 
     #name {
-      font-size: 36px;
-      font-weight: bold;
       margin-top: 5px;
-      word-break: break-word;
+      font-size: 36px;
+      font-weight: 800;
+    }
+
+    .site-label {
+      margin-top: 30px;
     }
 
     #site {
-      font-size: 64px;
-      font-weight: 900;
       margin-top: 5px;
-      word-break: break-word;
+      font-size: 72px;
+      line-height: 1;
+      font-weight: 900;
     }
 
     #error {
-      color: #c00;
-      margin-top: 20px;
+      display: none;
+      margin-top: 25px;
+      padding: 20px;
+      border-radius: 16px;
+      background: #fff;
+      color: #c00000;
+      font-size: 20px;
       font-weight: bold;
+    }
+
+    #nextButton {
+      display: none;
+      margin-top: 20px;
+      background: #555;
+    }
+
+    .test-area {
+      margin-top: 40px;
+      padding-top: 25px;
+      border-top: 1px solid #ddd;
+    }
+
+    .test-title {
+      color: #888;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    #testButton {
+      background: white;
+      color: #333;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      padding: 15px;
     }
   </style>
 </head>
 
 <body>
 
-  <div class="container">
+<div class="container">
 
-    <h1>SBCMT</h1>
-    <div class="sub">QR受付システム</div>
+  <h1>SBCMT</h1>
+  <div class="subtitle">QR受付システム</div>
 
-    <button id="scanButton" onclick="startScanner()">
-      QRを読み取る
-    </button>
+  <button id="scanButton" onclick="startScanner()">
+    QRを読み取る
+  </button>
 
-    <div id="reader"></div>
+  <div id="reader"></div>
 
-    <div id="result">
-      <div class="label">名前</div>
-      <div id="name"></div>
+  <div id="status"></div>
 
-      <div class="label">区画番号</div>
-      <div id="site"></div>
-    </div>
+  <div id="result">
+    <div class="label">名前</div>
+    <div id="name"></div>
 
-    <div id="error"></div>
-
+    <div class="label site-label">区画番号</div>
+    <div id="site"></div>
   </div>
 
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <div id="error"></div>
 
-  <script>
-    let scanner = null;
-    let scanning = false;
+  <button id="nextButton" onclick="resetScanner()">
+    次の受付
+  </button>
 
-    function showError(message) {
-      document.getElementById("error").textContent = message;
+  <div class="test-area">
+    <div class="test-title">動作確認用</div>
+    <button id="testButton" onclick="testParticipant()">
+      SBCMT-001 をテスト
+    </button>
+  </div>
+
+</div>
+
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<script>
+
+  /*
+  ========================================
+  参加者データ
+  ========================================
+
+  QRコードにはIDだけを入れます。
+
+  例：
+  SBCMT-001
+
+  区画番号を変更する場合は、
+  site の数字だけ変更します。
+
+  QRコードを作り直す必要はありません。
+  */
+
+  const participants = {
+
+    "SBCMT-001": {
+      name: "小森様",
+      site: "001"
+    },
+
+    "SBCMT-002": {
+      name: "テスト山田様",
+      site: "002"
+    },
+
+    "SBCMT-003": {
+      name: "テスト佐藤様",
+      site: "003"
     }
 
-    function showResult(name, site) {
-      document.getElementById("name").textContent = name;
-      document.getElementById("site").textContent = site;
-      document.getElementById("result").style.display = "block";
-      document.getElementById("error").textContent = "";
+  };
+
+
+  let scanner = null;
+  let scanning = false;
+  let processing = false;
+
+
+  function lookupParticipant(id) {
+
+    const cleanId = id.trim();
+
+    if (!participants[cleanId]) {
+      showError(
+        "登録されていないQRコードです\n\n" +
+        cleanId
+      );
+      return;
     }
 
-    function readData(decodedText) {
-      let name = "";
-      let site = "";
+    const person = participants[cleanId];
 
-      try {
-        const data = JSON.parse(decodedText);
-        name = data.name || "";
-        site = data.site || "";
-      } catch (e) {
-        try {
-          const params = new URLSearchParams(decodedText);
-          name = params.get("name") || "";
-          site = params.get("site") || "";
-        } catch (e2) {
-          return false;
-        }
-      }
+    showParticipant(
+      person.name,
+      person.site
+    );
+  }
 
-      if (!name || !site) {
-        return false;
-      }
 
-      showResult(name, site);
-      return true;
+  function showParticipant(name, site) {
+
+    processing = true;
+
+    document.getElementById("name").textContent = name;
+    document.getElementById("site").textContent = site;
+
+    document.getElementById("result").style.display = "block";
+    document.getElementById("error").style.display = "none";
+    document.getElementById("nextButton").style.display = "block";
+    document.getElementById("status").textContent = "受付QRを読み取りました";
+
+    stopScanner();
+  }
+
+
+  function showError(message) {
+
+    processing = true;
+
+    document.getElementById("result").style.display = "none";
+
+    const errorBox = document.getElementById("error");
+
+    errorBox.innerText = message;
+    errorBox.style.display = "block";
+
+    document.getElementById("nextButton").style.display = "block";
+    document.getElementById("status").textContent = "";
+
+    stopScanner();
+  }
+
+
+  async function startScanner() {
+
+    if (scanning) {
+      return;
     }
 
-    function startScanner() {
-      document.getElementById("result").style.display = "none";
-      document.getElementById("error").textContent = "";
+    processing = false;
 
-      if (scanning) {
-        return;
-      }
+    document.getElementById("result").style.display = "none";
+    document.getElementById("error").style.display = "none";
+    document.getElementById("nextButton").style.display = "none";
+
+    document.getElementById("status").textContent =
+      "カメラを起動しています…";
+
+    try {
 
       scanner = new Html5Qrcode("reader");
-      scanning = true;
 
-      scanner.start(
-        { facingMode: "environment" },
-        {
-          fps: 20,
+      const config = {
 
-          qrbox: function(viewfinderWidth, viewfinderHeight) {
-            const size = Math.floor(
-              Math.min(viewfinderWidth, viewfinderHeight) * 0.8
-            );
+        fps: 15,
 
-            return {
-              width: size,
-              height: size
-            };
-          },
+        qrbox: function(viewfinderWidth, viewfinderHeight) {
 
-          aspectRatio: 1.0
+          const minimum =
+            Math.min(viewfinderWidth, viewfinderHeight);
+
+          const size =
+            Math.floor(minimum * 0.85);
+
+          return {
+            width: size,
+            height: size
+          };
         },
+
+        aspectRatio: 1.0,
+
+        disableFlip: false
+
+      };
+
+
+      await scanner.start(
+
+        {
+          facingMode: {
+            ideal: "environment"
+          }
+        },
+
+        config,
 
         function(decodedText) {
 
-          if (!readData(decodedText)) {
-            showError("受付用QRコードではありません");
+          if (processing) {
             return;
           }
 
-          scanner.stop().then(function() {
-            scanning = false;
-            document.getElementById("reader").innerHTML = "";
-          }).catch(function() {
-            scanning = false;
-          });
+          processing = true;
+
+          lookupParticipant(decodedText);
 
         },
 
         function(errorMessage) {
-          // QRを探している間に発生する通常の読取エラーは表示しない
+          // QRを探している間の通常エラーは無視
         }
 
-      ).catch(function(err) {
-        scanning = false;
-        showError("カメラを起動できませんでした");
-      });
+      );
+
+
+      scanning = true;
+
+      document.getElementById("status").textContent =
+        "QRコードを枠内に映してください";
+
+
+    } catch (error) {
+
+      scanning = false;
+
+      document.getElementById("status").textContent = "";
+
+      showError(
+        "カメラを起動できませんでした。\n" +
+        "Safariのカメラ許可を確認してください。"
+      );
+
     }
-  </script>
+
+  }
+
+
+  async function stopScanner() {
+
+    if (!scanner) {
+      scanning = false;
+      return;
+    }
+
+    try {
+
+      if (scanning) {
+        await scanner.stop();
+      }
+
+    } catch (error) {
+      // 停止時エラーは無視
+    }
+
+    try {
+      scanner.clear();
+    } catch (error) {
+      // clearエラーは無視
+    }
+
+    scanner = null;
+    scanning = false;
+
+  }
+
+
+  async function resetScanner() {
+
+    await stopScanner();
+
+    processing = false;
+
+    document.getElementById("result").style.display = "none";
+    document.getElementById("error").style.display = "none";
+    document.getElementById("nextButton").style.display = "none";
+    document.getElementById("status").textContent = "";
+
+    startScanner();
+
+  }
+
+
+  function testParticipant() {
+
+    lookupParticipant("SBCMT-001");
+
+  }
+
+</script>
 
 </body>
 </html>
