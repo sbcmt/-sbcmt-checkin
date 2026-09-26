@@ -2,13 +2,15 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
 <title>SBCMT 入場・受付管理</title>
 
 <style>
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
@@ -38,6 +40,73 @@ h1 {
   font-size: 15px;
 }
 
+/* ================================
+   ログイン画面
+================================ */
+
+#loginScreen {
+  margin-top: 25px;
+  padding: 24px 18px;
+  background: white;
+  border-radius: 18px;
+  box-shadow: 0 4px 18px rgba(0,0,0,.08);
+}
+
+.loginTitle {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.loginDescription {
+  margin: 8px 0 20px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.loginInput {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  background: white;
+  font-size: 16px;
+}
+
+.loginButton {
+  width: 100%;
+  padding: 17px;
+  border: none;
+  border-radius: 14px;
+  background: #111;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+#loginError {
+  display: none;
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #fdeaea;
+  color: #b00000;
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+/* ================================
+   メイン
+================================ */
+
+#mainApp {
+  display: none;
+}
+
 #databaseStatus {
   margin-top: 14px;
   padding: 9px;
@@ -53,18 +122,16 @@ h1 {
   border-radius: 10px;
   text-align: center;
   font-size: 12px;
-  background: #fff3cd;
-  color: #795500;
 }
 
 .firebaseOnline {
-  background: #e7f6ea !important;
-  color: #176b2c !important;
+  background: #e7f6ea;
+  color: #176b2c;
 }
 
 .firebaseOffline {
-  background: #fdeaea !important;
-  color: #b00000 !important;
+  background: #fdeaea;
+  color: #b00000;
 }
 
 .summary {
@@ -107,7 +174,6 @@ h1 {
   color: #333;
   font-size: 16px;
   font-weight: bold;
-  cursor: pointer;
 }
 
 .tabButton.active {
@@ -137,7 +203,10 @@ h1 {
   font-size: 14px;
 }
 
-/* カメラビュー */
+/* ================================
+   カメラ
+================================ */
+
 #reader {
   width: 100%;
   margin: 8px auto 12px;
@@ -146,7 +215,6 @@ h1 {
   background: #222;
 }
 
-/* カメラ映像 */
 #reader video {
   width: 100% !important;
   border-radius: 16px;
@@ -174,6 +242,10 @@ h1 {
   color: #666;
   font-size: 14px;
 }
+
+/* ================================
+   読取結果
+================================ */
 
 #result {
   display: none;
@@ -259,6 +331,10 @@ h1 {
   font-weight: bold;
 }
 
+/* ================================
+   一覧
+================================ */
+
 .listControls {
   margin-top: 22px;
 }
@@ -343,6 +419,10 @@ td {
   color: #777;
 }
 
+/* ================================
+   管理
+================================ */
+
 .adminArea {
   margin-top: 35px;
   padding-top: 20px;
@@ -367,6 +447,17 @@ td {
   font-weight: bold;
 }
 
+.logoutButton {
+  width: 100%;
+  margin-top: 10px;
+  padding: 13px;
+  border: 1px solid #aaa;
+  border-radius: 12px;
+  background: white;
+  color: #555;
+  font-size: 14px;
+}
+
 .resetNote {
   margin-top: 8px;
   text-align: center;
@@ -386,194 +477,257 @@ td {
     <div class="subtitle">入場・受付管理</div>
   </div>
 
-  <div id="databaseStatus">
-    参加者リストを読み込んでいます…
-  </div>
 
-  <div id="firebaseStatus">
-    Firebaseに接続しています…
-  </div>
+  <!-- ログイン -->
 
-  <div class="summary">
+  <div id="loginScreen">
 
-    <div class="summaryBox">
-      <div class="summaryLabel">参加者</div>
-      <div class="summaryNumber" id="totalCount">0</div>
+    <div class="loginTitle">
+      スタッフログイン
     </div>
 
-    <div class="summaryBox">
-      <div class="summaryLabel">入場</div>
-      <div class="summaryNumber" id="entryCount">0</div>
+    <div class="loginDescription">
+      受付専用アカウントでログインしてください
     </div>
 
-    <div class="summaryBox">
-      <div class="summaryLabel">受付</div>
-      <div class="summaryNumber" id="receptionCount">0</div>
-    </div>
+    <input
+      id="email"
+      class="loginInput"
+      type="email"
+      placeholder="メールアドレス"
+      autocomplete="username">
 
-  </div>
-
-  <div class="tabs">
-
-    <button class="tabButton active"
-      id="entryTab"
-      onclick="changePage('entry')">
-      入場
-    </button>
-
-    <button class="tabButton"
-      id="receptionTab"
-      onclick="changePage('reception')">
-      受付
-    </button>
-
-    <button class="tabButton"
-      id="listTab"
-      onclick="changePage('list')">
-      一覧
-    </button>
-
-  </div>
-
-
-  <div id="scanPage" class="page active">
-
-    <div class="modeTitle" id="modeTitle">
-      入場
-    </div>
-
-    <div class="modeDescription" id="modeDescription">
-      入場する方のQRを読み取ります
-    </div>
-
-    <!-- カメラビューをここに移動 -->
-    <div id="reader"></div>
+    <input
+      id="password"
+      class="loginInput"
+      type="password"
+      placeholder="パスワード"
+      autocomplete="current-password">
 
     <button
-      id="scanButton"
-      class="scanButton"
-      onclick="startScanner()"
-      disabled>
-      QRを読み取る
+      class="loginButton"
+      onclick="login()">
+      ログイン
     </button>
 
-    <div id="scanStatus"></div>
-
-    <div id="result">
-
-      <div id="completeMessage">
-        入場完了
-      </div>
-
-      <div id="alreadyMessage">
-        入場済み
-      </div>
-
-      <div class="label">名前</div>
-      <div id="resultName"></div>
-
-      <div class="label siteLabel">
-        区画番号
-      </div>
-
-      <div id="resultSite"></div>
-
-      <div id="resultTime"></div>
-
-    </div>
-
-    <div id="error"></div>
-
-    <button
-      id="nextButton"
-      onclick="nextScan()">
-      次のQRを読み取る
-    </button>
+    <div id="loginError"></div>
 
   </div>
 
 
-  <div id="listPage" class="page">
+  <!-- メインアプリ -->
 
-    <div class="listControls">
+  <div id="mainApp">
 
-      <input
-        id="searchInput"
-        class="searchInput"
-        type="text"
-        placeholder="名前・区画番号で検索"
-        oninput="renderList()">
+    <div id="databaseStatus">
+      参加者リストを読み込んでいます…
+    </div>
 
-      <div class="filters">
+    <div id="firebaseStatus" class="firebaseOffline">
+      Firebaseに接続しています…
+    </div>
 
-        <button
-          id="filterAll"
-          class="filterButton active"
-          onclick="setFilter('all')">
-          全員
-        </button>
 
-        <button
-          id="filterNotEntry"
-          class="filterButton"
-          onclick="setFilter('notEntry')">
-          未入場
-        </button>
+    <div class="summary">
 
-        <button
-          id="filterNotReception"
-          class="filterButton"
-          onclick="setFilter('notReception')">
-          未受付
-        </button>
+      <div class="summaryBox">
+        <div class="summaryLabel">参加者</div>
+        <div class="summaryNumber" id="totalCount">0</div>
+      </div>
+
+      <div class="summaryBox">
+        <div class="summaryLabel">入場</div>
+        <div class="summaryNumber" id="entryCount">0</div>
+      </div>
+
+      <div class="summaryBox">
+        <div class="summaryLabel">受付</div>
+        <div class="summaryNumber" id="receptionCount">0</div>
+      </div>
+
+    </div>
+
+
+    <div class="tabs">
+
+      <button
+        class="tabButton active"
+        id="entryTab"
+        onclick="changePage('entry')">
+        入場
+      </button>
+
+      <button
+        class="tabButton"
+        id="receptionTab"
+        onclick="changePage('reception')">
+        受付
+      </button>
+
+      <button
+        class="tabButton"
+        id="listTab"
+        onclick="changePage('list')">
+        一覧
+      </button>
+
+    </div>
+
+
+    <!-- QR画面 -->
+
+    <div id="scanPage" class="page active">
+
+      <div class="modeTitle" id="modeTitle">
+        入場
+      </div>
+
+      <div class="modeDescription" id="modeDescription">
+        入場する方のQRを読み取ります
+      </div>
+
+      <!-- 希望された位置にカメラ -->
+      <div id="reader"></div>
+
+      <button
+        id="scanButton"
+        class="scanButton"
+        onclick="startScanner()"
+        disabled>
+        QRを読み取る
+      </button>
+
+      <div id="scanStatus"></div>
+
+      <div id="result">
+
+        <div id="completeMessage">
+          入場完了
+        </div>
+
+        <div id="alreadyMessage">
+          入場済み
+        </div>
+
+        <div class="label">名前</div>
+        <div id="resultName"></div>
+
+        <div class="label siteLabel">
+          区画番号
+        </div>
+
+        <div id="resultSite"></div>
+
+        <div id="resultTime"></div>
+
+      </div>
+
+      <div id="error"></div>
+
+      <button
+        id="nextButton"
+        onclick="nextScan()">
+        次のQRを読み取る
+      </button>
+
+    </div>
+
+
+    <!-- 一覧 -->
+
+    <div id="listPage" class="page">
+
+      <div class="listControls">
+
+        <input
+          id="searchInput"
+          class="searchInput"
+          type="text"
+          placeholder="名前・区画番号で検索"
+          oninput="renderList()">
+
+        <div class="filters">
+
+          <button
+            id="filterAll"
+            class="filterButton active"
+            onclick="setFilter('all')">
+            全員
+          </button>
+
+          <button
+            id="filterNotEntry"
+            class="filterButton"
+            onclick="setFilter('notEntry')">
+            未入場
+          </button>
+
+          <button
+            id="filterNotReception"
+            class="filterButton"
+            onclick="setFilter('notReception')">
+            未受付
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <div class="tableWrap">
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>名前</th>
+              <th>区画</th>
+              <th>入場</th>
+              <th>受付</th>
+            </tr>
+          </thead>
+
+          <tbody id="participantTable"></tbody>
+
+        </table>
+
+        <div
+          id="emptyMessage"
+          class="emptyMessage"
+          style="display:none;">
+          該当者はいません
+        </div>
 
       </div>
 
     </div>
 
-    <div class="tableWrap">
 
-      <table>
+    <!-- 管理 -->
 
-        <thead>
-          <tr>
-            <th>名前</th>
-            <th>区画</th>
-            <th>入場</th>
-            <th>受付</th>
-          </tr>
-        </thead>
+    <div class="adminArea">
 
-        <tbody id="participantTable"></tbody>
-
-      </table>
-
-      <div
-        id="emptyMessage"
-        class="emptyMessage"
-        style="display:none;">
-        該当者はいません
+      <div class="adminTitle">
+        管理
       </div>
 
-    </div>
+      <button
+        class="resetButton"
+        onclick="resetAllRecords()">
+        入場・受付記録をすべてリセット
+      </button>
 
-  </div>
+      <div class="resetNote">
+        Firebase上の入場・受付記録だけを削除します。<br>
+        participants.csv やQRは削除されません。
+      </div>
 
+      <button
+        class="logoutButton"
+        onclick="logout()">
+        ログアウト
+      </button>
 
-  <div class="adminArea">
-
-    <div class="adminTitle">管理</div>
-
-    <button
-      class="resetButton"
-      onclick="resetAllRecords()">
-      入場・受付記録をすべてリセット
-    </button>
-
-    <div class="resetNote">
-      テスト終了後に使用してください。<br>
-      Firebase上の入場・受付記録だけを削除します。<br>
-      participants.csv やQRは削除されません。
     </div>
 
   </div>
@@ -582,6 +736,7 @@ td {
 
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
 
 <script type="module">
 
@@ -597,6 +752,17 @@ import {
   remove
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+
+/* ===============================
+   Firebase
+================================ */
 
 const firebaseConfig = {
 
@@ -628,78 +794,237 @@ const firebaseConfig = {
 
 
 const app = initializeApp(firebaseConfig);
+
 const database = getDatabase(app);
+
+const auth = getAuth(app);
+
+
+/* ===============================
+   データ
+================================ */
 
 let participants = {};
 let sharedRecords = {};
+
 let currentMode = "entry";
 let currentFilter = "all";
+
 let html5QrCode = null;
 let scannerRunning = false;
 let alreadyRead = false;
 let firebaseConnected = false;
 
+let attendanceListenerStarted = false;
 
-/* Firebase接続状態 */
 
-const connectedRef = ref(database, ".info/connected");
+/* ===============================
+   ログイン状態
+================================ */
 
-onValue(connectedRef, snapshot => {
+onAuthStateChanged(auth, async user => {
 
-  firebaseConnected = snapshot.val() === true;
+  if (user) {
 
-  const status =
-    document.getElementById("firebaseStatus");
+    document.getElementById("loginScreen").style.display =
+      "none";
 
-  if (firebaseConnected) {
+    document.getElementById("mainApp").style.display =
+      "block";
 
-    status.textContent = "● 同期接続中";
-    status.className = "firebaseOnline";
+    if (!attendanceListenerStarted) {
+
+      startAttendanceListener();
+
+      attendanceListenerStarted = true;
+
+    }
+
+    if (Object.keys(participants).length === 0) {
+
+      await loadParticipants();
+
+    }
 
   } else {
 
-    status.textContent = "● Firebase未接続";
-    status.className = "firebaseOffline";
+    await stopScanner();
+
+    document.getElementById("loginScreen").style.display =
+      "block";
+
+    document.getElementById("mainApp").style.display =
+      "none";
 
   }
 
 });
 
 
-/* Firebaseリアルタイム同期 */
+/* ===============================
+   ログイン
+================================ */
 
-const recordsRef = ref(database, "attendance");
+async function login() {
 
-onValue(
-  recordsRef,
+  const email =
+    document.getElementById("email").value.trim();
 
-  snapshot => {
+  const password =
+    document.getElementById("password").value;
 
-    sharedRecords = snapshot.val() || {};
+  const errorBox =
+    document.getElementById("loginError");
 
-    updateSummary();
-    renderList();
 
-  },
+  errorBox.style.display =
+    "none";
 
-  error => {
 
-    const status =
-      document.getElementById("firebaseStatus");
+  if (!email || !password) {
+
+    errorBox.textContent =
+      "メールアドレスとパスワードを入力してください。";
+
+    errorBox.style.display =
+      "block";
+
+    return;
+
+  }
+
+
+  try {
+
+    await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+    document.getElementById("password").value =
+      "";
+
+  } catch (error) {
+
+    console.error(error);
+
+    errorBox.textContent =
+      "ログインできませんでした。メールアドレスとパスワードを確認してください。";
+
+    errorBox.style.display =
+      "block";
+
+  }
+
+}
+
+
+/* ===============================
+   ログアウト
+================================ */
+
+async function logout() {
+
+  const answer =
+    confirm("ログアウトしますか？");
+
+  if (!answer) return;
+
+  await stopScanner();
+
+  await signOut(auth);
+
+}
+
+
+/* ===============================
+   Firebase接続状態
+================================ */
+
+const connectedRef =
+  ref(database, ".info/connected");
+
+onValue(connectedRef, snapshot => {
+
+  firebaseConnected =
+    snapshot.val() === true;
+
+  const status =
+    document.getElementById("firebaseStatus");
+
+  if (!status) return;
+
+
+  if (firebaseConnected) {
 
     status.textContent =
-      "Firebaseの読込に失敗しました";
+      "● 同期接続中";
+
+    status.className =
+      "firebaseOnline";
+
+  } else {
+
+    status.textContent =
+      "● Firebase未接続";
 
     status.className =
       "firebaseOffline";
 
-    console.error(error);
-
   }
-);
+
+});
 
 
-/* CSV */
+/* ===============================
+   リアルタイム同期
+================================ */
+
+function startAttendanceListener() {
+
+  const recordsRef =
+    ref(database, "attendance");
+
+
+  onValue(
+
+    recordsRef,
+
+    snapshot => {
+
+      sharedRecords =
+        snapshot.val() || {};
+
+      updateSummary();
+
+      renderList();
+
+    },
+
+    error => {
+
+      console.error(error);
+
+      const status =
+        document.getElementById("firebaseStatus");
+
+      status.textContent =
+        "Firebaseへのアクセスが拒否されました";
+
+      status.className =
+        "firebaseOffline";
+
+    }
+
+  );
+
+}
+
+
+/* ===============================
+   CSV
+================================ */
 
 async function loadParticipants() {
 
@@ -709,30 +1034,53 @@ async function loadParticipants() {
   try {
 
     const response =
-      await fetch("participants.csv?t=" + Date.now());
+      await fetch(
+        "participants.csv?t=" +
+        Date.now()
+      );
 
     if (!response.ok) {
-      throw new Error("participants.csv を取得できません");
+
+      throw new Error(
+        "participants.csv を取得できません"
+      );
+
     }
 
-    const text = await response.text();
+
+    const text =
+      await response.text();
 
     parseCSV(text);
+
 
     const count =
       Object.keys(participants).length;
 
+
     if (count === 0) {
-      throw new Error("参加者データが0件です");
+
+      throw new Error(
+        "参加者データが0件です"
+      );
+
     }
 
-    status.textContent =
-      "参加者 " + count + "組 読み込み完了";
 
-    document.getElementById("scanButton").disabled = false;
+    status.textContent =
+      "参加者 " +
+      count +
+      "組 読み込み完了";
+
+
+    document.getElementById("scanButton").disabled =
+      false;
+
 
     updateSummary();
+
     renderList();
+
 
   } catch (error) {
 
@@ -753,20 +1101,31 @@ function parseCSV(text) {
 
   participants = {};
 
-  text = text.replace(/^\uFEFF/, "");
+  text =
+    text.replace(/^\uFEFF/, "");
 
-  const rows = text.split(/\r?\n/);
+  const rows =
+    text.split(/\r?\n/);
 
   if (rows.length < 2) return;
 
+
   const headers =
     parseCSVLine(rows[0]).map(
-      value => value.trim().toLowerCase()
+      value =>
+        value.trim().toLowerCase()
     );
 
-  const idIndex = headers.indexOf("id");
-  const nameIndex = headers.indexOf("name");
-  const siteIndex = headers.indexOf("site");
+
+  const idIndex =
+    headers.indexOf("id");
+
+  const nameIndex =
+    headers.indexOf("name");
+
+  const siteIndex =
+    headers.indexOf("site");
+
 
   if (
     idIndex === -1 ||
@@ -780,11 +1139,19 @@ function parseCSV(text) {
 
   }
 
-  for (let i = 1; i < rows.length; i++) {
+
+  for (
+    let i = 1;
+    i < rows.length;
+    i++
+  ) {
 
     if (!rows[i].trim()) continue;
 
-    const columns = parseCSVLine(rows[i]);
+
+    const columns =
+      parseCSVLine(rows[i]);
+
 
     const id =
       (columns[idIndex] || "").trim();
@@ -795,12 +1162,14 @@ function parseCSV(text) {
     const site =
       (columns[siteIndex] || "").trim();
 
+
     if (!id) continue;
 
+
     participants[id] = {
-      id: id,
-      name: name,
-      site: site
+      id,
+      name,
+      site
     };
 
   }
@@ -811,12 +1180,21 @@ function parseCSV(text) {
 function parseCSVLine(line) {
 
   const result = [];
+
   let current = "";
+
   let insideQuotes = false;
 
-  for (let i = 0; i < line.length; i++) {
 
-    const char = line[i];
+  for (
+    let i = 0;
+    i < line.length;
+    i++
+  ) {
+
+    const char =
+      line[i];
+
 
     if (char === '"') {
 
@@ -826,11 +1204,13 @@ function parseCSVLine(line) {
       ) {
 
         current += '"';
+
         i++;
 
       } else {
 
-        insideQuotes = !insideQuotes;
+        insideQuotes =
+          !insideQuotes;
 
       }
 
@@ -840,6 +1220,7 @@ function parseCSVLine(line) {
     ) {
 
       result.push(current);
+
       current = "";
 
     } else {
@@ -850,6 +1231,7 @@ function parseCSVLine(line) {
 
   }
 
+
   result.push(current);
 
   return result;
@@ -857,7 +1239,9 @@ function parseCSVLine(line) {
 }
 
 
-/* ページ切替 */
+/* ===============================
+   ページ切替
+================================ */
 
 async function changePage(page) {
 
@@ -865,12 +1249,14 @@ async function changePage(page) {
 
   clearScanScreen();
 
+
   document
     .querySelectorAll(".tabButton")
     .forEach(
       button =>
         button.classList.remove("active")
     );
+
 
   document
     .querySelectorAll(".page")
@@ -882,7 +1268,8 @@ async function changePage(page) {
 
   if (page === "entry") {
 
-    currentMode = "entry";
+    currentMode =
+      "entry";
 
     document
       .getElementById("entryTab")
@@ -903,7 +1290,8 @@ async function changePage(page) {
 
   if (page === "reception") {
 
-    currentMode = "reception";
+    currentMode =
+      "reception";
 
     document
       .getElementById("receptionTab")
@@ -939,11 +1327,15 @@ async function changePage(page) {
 }
 
 
-/* QR処理 */
+/* ===============================
+   QR処理
+================================ */
 
 async function lookupParticipant(rawId) {
 
-  const id = String(rawId).trim();
+  const id =
+    String(rawId).trim();
+
 
   if (!participants[id]) {
 
@@ -963,11 +1355,24 @@ async function lookupParticipant(rawId) {
   }
 
 
+  if (!auth.currentUser) {
+
+    showError(
+      "ログイン状態を確認できませんでした。"
+    );
+
+    await stopScanner();
+
+    return;
+
+  }
+
+
   if (!firebaseConnected) {
 
     showError(
       "Firebaseに接続できていません。\n\n" +
-      "通信状態を確認してから、もう一度読み取ってください。"
+      "通信状態を確認してください。"
     );
 
     await stopScanner();
@@ -980,8 +1385,12 @@ async function lookupParticipant(rawId) {
   }
 
 
-  const person = participants[id];
-  const record = sharedRecords[id] || {};
+  const person =
+    participants[id];
+
+  const record =
+    sharedRecords[id] || {};
+
 
   document.getElementById("resultName").textContent =
     person.name;
@@ -991,6 +1400,7 @@ async function lookupParticipant(rawId) {
 
   document.getElementById("error").style.display =
     "none";
+
 
   const existingTime =
     record[currentMode];
@@ -1020,13 +1430,16 @@ async function lookupParticipant(rawId) {
     document.getElementById("scanStatus").textContent =
       "このQRはすでに処理済みです";
 
+
   } else {
 
     try {
 
-      const now = Date.now();
+      const now =
+        Date.now();
 
       const updates = {};
+
 
       updates[
         "attendance/" +
@@ -1035,10 +1448,12 @@ async function lookupParticipant(rawId) {
         currentMode
       ] = now;
 
+
       await update(
         ref(database),
         updates
       );
+
 
       document.getElementById("completeMessage").style.display =
         "block";
@@ -1048,8 +1463,10 @@ async function lookupParticipant(rawId) {
           ? "入場完了"
           : "受付完了";
 
+
       document.getElementById("alreadyMessage").style.display =
         "none";
+
 
       document.getElementById("resultTime").textContent =
         (
@@ -1059,17 +1476,20 @@ async function lookupParticipant(rawId) {
         ) +
         formatDateTime(now);
 
+
       document.getElementById("scanStatus").textContent =
         currentMode === "entry"
           ? "入場登録しました"
           : "受付登録しました";
 
+
     } catch (error) {
+
+      console.error(error);
 
       showError(
         "Firebaseへの保存に失敗しました。\n\n" +
-        "通信状態を確認してください。\n\n" +
-        String(error)
+        "ログイン状態または通信状態を確認してください。"
       );
 
       await stopScanner();
@@ -1095,7 +1515,9 @@ async function lookupParticipant(rawId) {
 }
 
 
-/* 集計 */
+/* ===============================
+   集計
+================================ */
 
 function updateSummary() {
 
@@ -1103,7 +1525,9 @@ function updateSummary() {
     Object.keys(participants);
 
   let entryCount = 0;
+
   let receptionCount = 0;
+
 
   ids.forEach(id => {
 
@@ -1120,6 +1544,7 @@ function updateSummary() {
 
   });
 
+
   document.getElementById("totalCount").textContent =
     ids.length;
 
@@ -1132,15 +1557,21 @@ function updateSummary() {
 }
 
 
-/* 一覧 */
+/* ===============================
+   一覧
+================================ */
 
 function renderList() {
 
   const tbody =
     document.getElementById("participantTable");
 
+  if (!tbody) return;
+
+
   const empty =
     document.getElementById("emptyMessage");
+
 
   const search =
     (
@@ -1149,9 +1580,11 @@ function renderList() {
     .trim()
     .toLowerCase();
 
+
   tbody.innerHTML = "";
 
   let shown = 0;
+
 
   Object.keys(participants).forEach(id => {
 
@@ -1160,6 +1593,7 @@ function renderList() {
 
     const record =
       sharedRecords[id] || {};
+
 
     const searchable =
       (
@@ -1170,12 +1604,14 @@ function renderList() {
         id
       ).toLowerCase();
 
+
     if (
       search &&
       !searchable.includes(search)
     ) {
       return;
     }
+
 
     if (
       currentFilter === "notEntry" &&
@@ -1184,6 +1620,7 @@ function renderList() {
       return;
     }
 
+
     if (
       currentFilter === "notReception" &&
       record.reception
@@ -1191,10 +1628,13 @@ function renderList() {
       return;
     }
 
+
     shown++;
+
 
     const tr =
       document.createElement("tr");
+
 
     const nameTd =
       document.createElement("td");
@@ -1205,6 +1645,7 @@ function renderList() {
     nameTd.textContent =
       person.name;
 
+
     const siteTd =
       document.createElement("td");
 
@@ -1213,6 +1654,7 @@ function renderList() {
 
     siteTd.textContent =
       person.site || "－";
+
 
     const entryTd =
       document.createElement("td");
@@ -1230,6 +1672,7 @@ function renderList() {
         ? "○"
         : "－";
 
+
     const receptionTd =
       document.createElement("td");
 
@@ -1246,6 +1689,7 @@ function renderList() {
         ? "○"
         : "－";
 
+
     tr.appendChild(nameTd);
     tr.appendChild(siteTd);
     tr.appendChild(entryTd);
@@ -1255,6 +1699,7 @@ function renderList() {
 
   });
 
+
   empty.style.display =
     shown === 0
       ? "block"
@@ -1263,11 +1708,15 @@ function renderList() {
 }
 
 
-/* フィルター */
+/* ===============================
+   フィルター
+================================ */
 
 function setFilter(filter) {
 
-  currentFilter = filter;
+  currentFilter =
+    filter;
+
 
   document
     .querySelectorAll(".filterButton")
@@ -1276,34 +1725,47 @@ function setFilter(filter) {
         button.classList.remove("active")
     );
 
+
   if (filter === "all") {
+
     document
       .getElementById("filterAll")
       .classList.add("active");
+
   }
 
+
   if (filter === "notEntry") {
+
     document
       .getElementById("filterNotEntry")
       .classList.add("active");
+
   }
 
+
   if (filter === "notReception") {
+
     document
       .getElementById("filterNotReception")
       .classList.add("active");
+
   }
+
 
   renderList();
 
 }
 
 
-/* 日時 */
+/* ===============================
+   日時
+================================ */
 
 function formatDateTime(value) {
 
-  const date = new Date(value);
+  const date =
+    new Date(value);
 
   const month =
     date.getMonth() + 1;
@@ -1312,10 +1774,15 @@ function formatDateTime(value) {
     date.getDate();
 
   const hour =
-    String(date.getHours()).padStart(2, "0");
+    String(
+      date.getHours()
+    ).padStart(2, "0");
 
   const minute =
-    String(date.getMinutes()).padStart(2, "0");
+    String(
+      date.getMinutes()
+    ).padStart(2, "0");
+
 
   return (
     month +
@@ -1330,20 +1797,24 @@ function formatDateTime(value) {
 }
 
 
-/* カメラ */
+/* ===============================
+   カメラ
+================================ */
 
 async function startScanner() {
 
-  if (scannerRunning) {
-    return;
-  }
+  if (scannerRunning) return;
 
-  alreadyRead = false;
+
+  alreadyRead =
+    false;
 
   clearScanScreen();
 
+
   document.getElementById("scanStatus").textContent =
     "カメラを確認しています…";
+
 
   if (
     typeof Html5Qrcode === "undefined"
@@ -1357,10 +1828,12 @@ async function startScanner() {
 
   }
 
+
   try {
 
     const cameras =
       await Html5Qrcode.getCameras();
+
 
     if (
       !cameras ||
@@ -1373,8 +1846,10 @@ async function startScanner() {
 
     }
 
+
     let selectedCamera =
       cameras[cameras.length - 1].id;
+
 
     for (
       let i = 0;
@@ -1383,7 +1858,10 @@ async function startScanner() {
     ) {
 
       const label =
-        (cameras[i].label || "").toLowerCase();
+        (
+          cameras[i].label || ""
+        ).toLowerCase();
+
 
       if (
         label.includes("back") ||
@@ -1401,10 +1879,14 @@ async function startScanner() {
 
     }
 
+
     html5QrCode =
       new Html5Qrcode("reader");
 
-    scannerRunning = true;
+
+    scannerRunning =
+      true;
+
 
     await html5QrCode.start(
 
@@ -1412,6 +1894,7 @@ async function startScanner() {
 
       {
         fps: 10,
+
         qrbox: {
           width: 250,
           height: 250
@@ -1420,13 +1903,14 @@ async function startScanner() {
 
       function(decodedText) {
 
-        if (alreadyRead) {
-          return;
-        }
+        if (alreadyRead) return;
 
-        alreadyRead = true;
+        alreadyRead =
+          true;
 
-        lookupParticipant(decodedText);
+        lookupParticipant(
+          decodedText
+        );
 
       },
 
@@ -1434,14 +1918,18 @@ async function startScanner() {
 
     );
 
+
     document.getElementById("scanStatus").textContent =
       currentMode === "entry"
         ? "入場QRを読み取ってください"
         : "受付QRを読み取ってください";
 
+
   } catch (error) {
 
-    scannerRunning = false;
+    scannerRunning =
+      false;
+
 
     const detail =
       error &&
@@ -1450,6 +1938,7 @@ async function startScanner() {
         error.name ||
         String(error)
       );
+
 
     showError(
       "カメラを起動できませんでした。\n\n" +
@@ -1462,36 +1951,52 @@ async function startScanner() {
 }
 
 
-/* カメラ停止 */
+/* ===============================
+   カメラ停止
+================================ */
 
 async function stopScanner() {
 
   if (!html5QrCode) {
 
-    scannerRunning = false;
+    scannerRunning =
+      false;
+
     return;
 
   }
 
+
   try {
 
     if (scannerRunning) {
+
       await html5QrCode.stop();
+
     }
 
   } catch (error) {}
 
+
   try {
+
     html5QrCode.clear();
+
   } catch (error) {}
 
-  html5QrCode = null;
-  scannerRunning = false;
+
+  html5QrCode =
+    null;
+
+  scannerRunning =
+    false;
 
 }
 
 
-/* 次のQR */
+/* ===============================
+   次のQR
+================================ */
 
 async function nextScan() {
 
@@ -1504,7 +2009,9 @@ async function nextScan() {
 }
 
 
-/* スキャン画面リセット */
+/* ===============================
+   表示クリア
+================================ */
 
 function clearScanScreen() {
 
@@ -1523,7 +2030,9 @@ function clearScanScreen() {
 }
 
 
-/* エラー */
+/* ===============================
+   エラー
+================================ */
 
 function showError(message) {
 
@@ -1539,12 +2048,15 @@ function showError(message) {
 }
 
 
-/* 全記録リセット */
+/* ===============================
+   全リセット
+================================ */
 
 async function resetAllRecords() {
 
   const count =
     Object.keys(sharedRecords).length;
+
 
   if (count === 0) {
 
@@ -1556,6 +2068,7 @@ async function resetAllRecords() {
 
   }
 
+
   const first =
     confirm(
       "Firebaseに保存されている入場・受付記録をすべてリセットします。\n\n" +
@@ -1563,7 +2076,9 @@ async function resetAllRecords() {
       "続けますか？"
     );
 
+
   if (!first) return;
+
 
   const second =
     confirm(
@@ -1571,27 +2086,36 @@ async function resetAllRecords() {
       "この操作は元に戻せません。"
     );
 
+
   if (!second) return;
+
 
   try {
 
     await stopScanner();
 
+
     await remove(
-      ref(database, "attendance")
+      ref(
+        database,
+        "attendance"
+      )
     );
 
+
     clearScanScreen();
+
 
     alert(
       "入場・受付記録をすべてリセットしました。"
     );
 
+
   } catch (error) {
 
     alert(
       "リセットに失敗しました。\n\n" +
-      String(error)
+      "ログイン状態を確認してください。"
     );
 
   }
@@ -1599,27 +2123,33 @@ async function resetAllRecords() {
 }
 
 
-/* HTMLから使用 */
+/* ===============================
+   HTMLから呼び出し
+================================ */
 
-window.changePage = changePage;
-window.startScanner = startScanner;
-window.nextScan = nextScan;
-window.setFilter = setFilter;
-window.renderList = renderList;
-window.resetAllRecords = resetAllRecords;
+window.login =
+  login;
 
+window.logout =
+  logout;
 
-/* 起動 */
+window.changePage =
+  changePage;
 
-window.addEventListener(
-  "DOMContentLoaded",
-  function() {
+window.startScanner =
+  startScanner;
 
-    loadParticipants();
-    updateSummary();
+window.nextScan =
+  nextScan;
 
-  }
-);
+window.setFilter =
+  setFilter;
+
+window.renderList =
+  renderList;
+
+window.resetAllRecords =
+  resetAllRecords;
 
 </script>
 
