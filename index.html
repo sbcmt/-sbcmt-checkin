@@ -905,15 +905,59 @@ async function login() {
     document.getElementById("password").value =
       "";
 
-  } catch (error) {
+    } catch (error) {
 
     console.error(error);
 
+    const errorCode =
+      error && error.code
+        ? error.code
+        : "unknown-error";
+
+    const explanations = {
+      "auth/invalid-credential":
+        "メールアドレスまたはパスワードがFirebaseの登録内容と一致していません。",
+
+      "auth/user-disabled":
+        "このユーザーは無効になっています。",
+
+      "auth/too-many-requests":
+        "ログイン試行が多いため、一時的に制限されています。",
+
+      "auth/network-request-failed":
+        "通信エラーです。インターネット接続を確認してください。",
+
+      "auth/operation-not-allowed":
+        "Firebaseでメール・パスワード認証が有効になっていません。",
+
+      "auth/unauthorized-domain":
+        "このWebサイトのドメインがFirebaseで許可されていません。",
+
+      "auth/invalid-api-key":
+        "FirebaseのAPIキー設定に問題があります。",
+
+      "auth/invalid-email":
+        "メールアドレスの形式が正しくありません。"
+    };
+
+    const explanation =
+      explanations[errorCode] ||
+      "Firebaseから返されたエラーコードを確認してください。";
+
     errorBox.textContent =
-      "ログインできませんでした。メールアドレスとパスワードを確認してください。";
+      "ログインできませんでした。\n\n" +
+      "エラーコード：\n" +
+      errorCode +
+      "\n\n" +
+      explanation;
+
+    errorBox.style.whiteSpace =
+      "pre-wrap";
 
     errorBox.style.display =
       "block";
+
+  }
 
   }
 
