@@ -1889,20 +1889,19 @@ async function startScanner() {
     }
 
 
-    let selectedCamera =
-      cameras[cameras.length - 1].id;
-
-
-    for (
-      let i = 0;
-      i < cameras.length;
-      i++
-    ) {
+    /*
+      iPhone / iPadで背面の標準カメラを優先します。
+      iPad Proなどで超広角・望遠・深度カメラが候補に出ても、
+      QR読取に向く通常の背面カメラを選びやすくしています。
+    */
+    function cameraScore(camera, index) {
 
       const label =
         (
-          cameras[i].label || ""
+          camera.label || ""
         ).toLowerCase();
+
+      let score = 0;
 
 
       if (
@@ -1911,19 +1910,100 @@ async function startScanner() {
         label.includes("environment") ||
         label.includes("背面")
       ) {
+        score += 100;
+      }
 
-        selectedCamera =
-          cameras[i].id;
 
-        break;
+      if (
+        label === "back camera" ||
+        label === "rear camera"
+      ) {
+        score += 80;
+      }
+
+
+      if (
+        label.includes("front") ||
+        label.includes("user") ||
+        label.includes("前面")
+      ) {
+        score -= 200;
+      }
+
+
+      if (
+        label.includes("ultra") ||
+        label.includes("超広角") ||
+        label.includes("tele") ||
+        label.includes("望遠") ||
+        label.includes("depth") ||
+        label.includes("lidar")
+      ) {
+        score -= 120;
+      }
+
+
+      /*
+        ラベルが空の端末では従来どおり後ろ側の候補を
+        少しだけ優先します。
+      */
+      score += index * 0.01;
+
+      return score;
+
+    }
+
+
+    let selectedCamera =
+      cameras[0].id;
+
+    let bestScore =
+      -Infinity;
+
+
+    cameras.forEach(
+      (camera, index) => {
+
+        const score =
+          cameraScore(
+            camera,
+            index
+          );
+
+        if (score > bestScore) {
+
+          bestScore =
+            score;
+
+          selectedCamera =
+            camera.id;
+
+        }
 
       }
+    );
+
+
+    const scannerOptions = {};
+
+
+    if (
+      typeof Html5QrcodeSupportedFormats !== "undefined"
+    ) {
+
+      scannerOptions.formatsToSupport =
+        [
+          Html5QrcodeSupportedFormats.QR_CODE
+        ];
 
     }
 
 
     html5QrCode =
-      new Html5Qrcode("reader");
+      new Html5Qrcode(
+        "reader",
+        scannerOptions
+      );
 
 
     scannerRunning =
@@ -1935,12 +2015,53 @@ async function startScanner() {
       selectedCamera,
 
       {
-        fps: 10,
+        /*
+          10fps → 15fps。
+          iPadでQRを横切った瞬間も拾いやすくします。
+        */
+        fps: 15,
 
-        qrbox: {
-          width: 250,
-          height: 250
-        }
+        /*
+          画面サイズに合わせて読取枠を自動拡大。
+          iPhoneでは大きくなりすぎず、
+          iPadでは250px固定より広い範囲を読み取ります。
+        */
+        qrbox:
+          function(
+            viewfinderWidth,
+            viewfinderHeight
+          ) {
+
+            const shortSide =
+              Math.min(
+                viewfinderWidth,
+                viewfinderHeight
+              );
+
+            const size =
+              Math.max(
+                140,
+                Math.min(
+                  360,
+                  Math.floor(
+                    shortSide * 0.72
+                  )
+                )
+              );
+
+            return {
+              width: size,
+              height: size
+            };
+
+          },
+
+        /*
+          QRは背面カメラで読むため左右反転解析を省き、
+          読取処理を軽くします。
+        */
+        disableFlip: true
+
       },
 
       function(decodedText) {
@@ -1963,8 +2084,8 @@ async function startScanner() {
 
     document.getElementById("scanStatus").textContent =
       currentMode === "entry"
-        ? "入場QRを読み取ってください"
-        : "受付QRを読み取ってください";
+        ? "入場QRを枠内に入れてください"
+        : "受付QRを枠内に入れてください";
 
 
   } catch (error) {
@@ -1980,6 +2101,19 @@ async function startScanner() {
         error.name ||
         String(error)
       );
+
+
+    try {
+
+      if (html5QrCode) {
+        html5QrCode.clear();
+      }
+
+    } catch (clearError) {}
+
+
+    html5QrCode =
+      null;
 
 
     showError(
