@@ -8,9 +8,7 @@
 <title>SBCMT 入場・受付管理</title>
 
 <style>
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -22,7 +20,7 @@ body {
 .container {
   max-width: 650px;
   margin: 0 auto;
-  padding: 25px 16px 50px;
+  padding: 22px 16px 50px;
 }
 
 .header {
@@ -41,7 +39,7 @@ h1 {
 }
 
 #databaseStatus {
-  margin-top: 18px;
+  margin-top: 16px;
   padding: 10px;
   border-radius: 10px;
   background: #e9e9e9;
@@ -49,23 +47,35 @@ h1 {
   font-size: 13px;
 }
 
-.ready {
-  color: #176b2c;
+#firebaseStatus {
+  margin-top: 7px;
+  padding: 8px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 12px;
+  background: #fff3cd;
+  color: #795500;
 }
 
-.errorStatus {
-  color: #b00000;
+.firebaseOnline {
+  background: #e7f6ea !important;
+  color: #176b2c !important;
+}
+
+.firebaseOffline {
+  background: #fdeaea !important;
+  color: #b00000 !important;
 }
 
 .summary {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   margin-top: 12px;
 }
 
 .summaryBox {
   flex: 1;
-  padding: 12px 5px;
+  padding: 11px 4px;
   background: white;
   border-radius: 12px;
   text-align: center;
@@ -114,14 +124,14 @@ h1 {
 }
 
 .modeTitle {
-  margin-top: 25px;
+  margin-top: 24px;
   text-align: center;
-  font-size: 28px;
+  font-size: 29px;
   font-weight: 900;
 }
 
 .modeDescription {
-  margin: 6px 0 20px;
+  margin: 6px 0 18px;
   text-align: center;
   color: #666;
   font-size: 14px;
@@ -136,7 +146,6 @@ h1 {
   color: white;
   font-size: 21px;
   font-weight: bold;
-  cursor: pointer;
 }
 
 .scanButton:disabled {
@@ -292,7 +301,6 @@ th {
   padding: 12px 7px;
   background: #eee;
   font-size: 13px;
-  text-align: center;
 }
 
 td {
@@ -301,11 +309,11 @@ td {
   font-size: 14px;
 }
 
-td.nameCell {
+.nameCell {
   font-weight: 700;
 }
 
-td.center {
+.center {
   text-align: center;
 }
 
@@ -355,6 +363,7 @@ td.center {
   text-align: center;
   color: #999;
   font-size: 11px;
+  line-height: 1.5;
 }
 </style>
 </head>
@@ -370,6 +379,10 @@ td.center {
 
   <div id="databaseStatus">
     参加者リストを読み込んでいます…
+  </div>
+
+  <div id="firebaseStatus">
+    Firebaseに接続しています…
   </div>
 
   <div class="summary">
@@ -393,22 +406,19 @@ td.center {
 
   <div class="tabs">
 
-    <button
-      class="tabButton active"
+    <button class="tabButton active"
       id="entryTab"
       onclick="changePage('entry')">
       入場
     </button>
 
-    <button
-      class="tabButton"
+    <button class="tabButton"
       id="receptionTab"
       onclick="changePage('reception')">
       受付
     </button>
 
-    <button
-      class="tabButton"
+    <button class="tabButton"
       id="listTab"
       onclick="changePage('list')">
       一覧
@@ -417,8 +427,6 @@ td.center {
   </div>
 
 
-  <!-- 入場・受付 共通スキャン画面 -->
-
   <div id="scanPage" class="page active">
 
     <div class="modeTitle" id="modeTitle">
@@ -426,7 +434,7 @@ td.center {
     </div>
 
     <div class="modeDescription" id="modeDescription">
-      入場確認用QRを読み取ります
+      入場する方のQRを読み取ります
     </div>
 
     <button
@@ -451,10 +459,7 @@ td.center {
         入場済み
       </div>
 
-      <div class="label">
-        名前
-      </div>
-
+      <div class="label">名前</div>
       <div id="resultName"></div>
 
       <div class="label siteLabel">
@@ -477,8 +482,6 @@ td.center {
 
   </div>
 
-
-  <!-- 一覧 -->
 
   <div id="listPage" class="page">
 
@@ -531,8 +534,7 @@ td.center {
           </tr>
         </thead>
 
-        <tbody id="participantTable">
-        </tbody>
+        <tbody id="participantTable"></tbody>
 
       </table>
 
@@ -548,13 +550,9 @@ td.center {
   </div>
 
 
-  <!-- 管理 -->
-
   <div class="adminArea">
 
-    <div class="adminTitle">
-      管理
-    </div>
+    <div class="adminTitle">管理</div>
 
     <button
       class="resetButton"
@@ -563,7 +561,9 @@ td.center {
     </button>
 
     <div class="resetNote">
-      テスト終了後に使用してください。参加者リストは削除されません。
+      テスト終了後に使用してください。<br>
+      Firebase上の入場・受付記録だけを削除します。<br>
+      participants.csv やQRは削除されません。
     </div>
 
   </div>
@@ -573,13 +573,71 @@ td.center {
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
-<script>
 
-/* ================================
-   基本設定
-================================ */
+<script type="module">
+
+import {
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+  getDatabase,
+  ref,
+  onValue,
+  update,
+  remove
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+
+/* =====================================
+   Firebase設定
+===================================== */
+
+const firebaseConfig = {
+
+  apiKey:
+    "AIzaSyCyNyj4KLWxU7qSE8GB00kHVge_cZycQMU",
+
+  authDomain:
+    "sbcmt-checkin.firebaseapp.com",
+
+  databaseURL:
+    "https://sbcmt-checkin-default-rtdb.firebaseio.com",
+
+  projectId:
+    "sbcmt-checkin",
+
+  storageBucket:
+    "sbcmt-checkin.firebasestorage.app",
+
+  messagingSenderId:
+    "756110330252",
+
+  appId:
+    "1:756110330252:web:f6fa8855cbed56823eaea9",
+
+  measurementId:
+    "G-CETYTW1BCS"
+
+};
+
+
+const app =
+  initializeApp(
+    firebaseConfig
+  );
+
+const database =
+  getDatabase(app);
+
+
+/* =====================================
+   基本データ
+===================================== */
 
 let participants = {};
+
+let sharedRecords = {};
 
 let currentMode = "entry";
 
@@ -591,48 +649,102 @@ let scannerRunning = false;
 
 let alreadyRead = false;
 
+let firebaseConnected = false;
 
-/* ================================
-   記録データ
-================================ */
 
-function getRecords() {
+/* =====================================
+   Firebase接続状態
+===================================== */
 
-  try {
+const connectedRef =
+  ref(
+    database,
+    ".info/connected"
+  );
 
-    const saved =
-      localStorage.getItem(
-        "sbcmtRecords"
+onValue(
+  connectedRef,
+  snapshot => {
+
+    firebaseConnected =
+      snapshot.val() === true;
+
+    const status =
+      document.getElementById(
+        "firebaseStatus"
       );
 
-    if (!saved) {
-      return {};
+    if (firebaseConnected) {
+
+      status.textContent =
+        "● 同期接続中";
+
+      status.className =
+        "firebaseOnline";
+
+    } else {
+
+      status.textContent =
+        "● Firebase未接続";
+
+      status.className =
+        "firebaseOffline";
+
     }
 
-    return JSON.parse(saved);
+  }
+);
 
-  } catch (error) {
 
-    return {};
+/* =====================================
+   Firebaseリアルタイム同期
+===================================== */
+
+const recordsRef =
+  ref(
+    database,
+    "attendance"
+  );
+
+
+onValue(
+
+  recordsRef,
+
+  snapshot => {
+
+    sharedRecords =
+      snapshot.val() || {};
+
+    updateSummary();
+
+    renderList();
+
+  },
+
+  error => {
+
+    const status =
+      document.getElementById(
+        "firebaseStatus"
+      );
+
+    status.textContent =
+      "Firebaseの読込に失敗しました";
+
+    status.className =
+      "firebaseOffline";
+
+    console.error(error);
 
   }
 
-}
+);
 
 
-function saveRecords(records) {
-
-  localStorage.setItem(
-    "sbcmtRecords",
-    JSON.stringify(records)
-  );
-
-}
-
-
-/* ================================
+/* =====================================
    CSV読込
-================================ */
+===================================== */
 
 async function loadParticipants() {
 
@@ -680,12 +792,10 @@ async function loadParticipants() {
       count +
       "組 読み込み完了";
 
-    status.className =
-      "ready";
-
     document.getElementById(
       "scanButton"
-    ).disabled = false;
+    ).disabled =
+      false;
 
     updateSummary();
 
@@ -695,9 +805,6 @@ async function loadParticipants() {
 
     status.textContent =
       "参加者リストを読み込めませんでした";
-
-    status.className =
-      "errorStatus";
 
     showError(
       "participants.csv の読み込みに失敗しました。\n\n" +
@@ -709,9 +816,9 @@ async function loadParticipants() {
 }
 
 
-/* ================================
+/* =====================================
    CSV解析
-================================ */
+===================================== */
 
 function parseCSV(text) {
 
@@ -736,8 +843,8 @@ function parseCSV(text) {
     ).map(
       value =>
         value
-        .trim()
-        .toLowerCase()
+          .trim()
+          .toLowerCase()
     );
 
   const idIndex =
@@ -778,20 +885,17 @@ function parseCSV(text) {
 
     const id =
       (
-        columns[idIndex] ||
-        ""
+        columns[idIndex] || ""
       ).trim();
 
     const name =
       (
-        columns[nameIndex] ||
-        ""
+        columns[nameIndex] || ""
       ).trim();
 
     const site =
       (
-        columns[siteIndex] ||
-        ""
+        columns[siteIndex] || ""
       ).trim();
 
     if (!id) {
@@ -834,7 +938,6 @@ function parseCSVLine(line) {
       ) {
 
         current += '"';
-
         i++;
 
       } else {
@@ -849,10 +952,7 @@ function parseCSVLine(line) {
       !insideQuotes
     ) {
 
-      result.push(
-        current
-      );
-
+      result.push(current);
       current = "";
 
     } else {
@@ -863,18 +963,16 @@ function parseCSVLine(line) {
 
   }
 
-  result.push(
-    current
-  );
+  result.push(current);
 
   return result;
 
 }
 
 
-/* ================================
+/* =====================================
    ページ切替
-================================ */
+===================================== */
 
 async function changePage(page) {
 
@@ -898,11 +996,12 @@ async function changePage(page) {
       ".page"
     )
     .forEach(
-      page =>
-        page.classList.remove(
+      element =>
+        element.classList.remove(
           "active"
         )
     );
+
 
   if (page === "entry") {
 
@@ -929,7 +1028,7 @@ async function changePage(page) {
     document.getElementById(
       "modeDescription"
     ).textContent =
-      "入場確認用QRを読み取ります";
+      "入場する方のQRを読み取ります";
 
   }
 
@@ -959,7 +1058,7 @@ async function changePage(page) {
     document.getElementById(
       "modeDescription"
     ).textContent =
-      "受付確認用QRを読み取ります";
+      "受付する方のQRを読み取ります";
 
   }
 
@@ -985,18 +1084,14 @@ async function changePage(page) {
 }
 
 
-/* ================================
-   QR読取結果
-================================ */
+/* =====================================
+   QR処理
+===================================== */
 
-function lookupParticipant(
-  rawId
-) {
+async function lookupParticipant(rawId) {
 
   const id =
-    String(
-      rawId
-    ).trim();
+    String(rawId).trim();
 
   if (!participants[id]) {
 
@@ -1006,7 +1101,7 @@ function lookupParticipant(
       id
     );
 
-    stopScanner();
+    await stopScanner();
 
     document.getElementById(
       "nextButton"
@@ -1017,30 +1112,44 @@ function lookupParticipant(
 
   }
 
+
+  if (!firebaseConnected) {
+
+    showError(
+      "Firebaseに接続できていません。\n\n" +
+      "通信状態を確認してから、もう一度読み取ってください。"
+    );
+
+    await stopScanner();
+
+    document.getElementById(
+      "nextButton"
+    ).style.display =
+      "block";
+
+    return;
+
+  }
+
+
   const person =
     participants[id];
 
-  const records =
-    getRecords();
+  const record =
+    sharedRecords[id] || {};
 
-  if (!records[id]) {
-
-    records[id] = {
-      entry: null,
-      reception: null
-    };
-
-  }
 
   document.getElementById(
     "resultName"
   ).textContent =
     person.name;
 
+
   document.getElementById(
     "resultSite"
   ).textContent =
-    person.site;
+    person.site || "未設定";
+
 
   document.getElementById(
     "error"
@@ -1049,7 +1158,7 @@ function lookupParticipant(
 
 
   const existingTime =
-    records[id][currentMode];
+    record[currentMode];
 
 
   if (existingTime) {
@@ -1068,16 +1177,16 @@ function lookupParticipant(
       "alreadyMessage"
     ).textContent =
       currentMode === "entry"
-      ? "入場済み"
-      : "受付済み";
+        ? "入場済み"
+        : "受付済み";
 
     document.getElementById(
       "resultTime"
     ).textContent =
       (
         currentMode === "entry"
-        ? "入場時刻："
-        : "受付時刻："
+          ? "入場時刻："
+          : "受付時刻："
       ) +
       formatDateTime(
         existingTime
@@ -1090,81 +1199,109 @@ function lookupParticipant(
 
   } else {
 
-    const now =
-      new Date().toISOString();
+    try {
 
-    records[id][currentMode] =
-      now;
+      const now =
+        Date.now();
 
-    saveRecords(
-      records
-    );
+      const updates = {};
 
-    document.getElementById(
-      "completeMessage"
-    ).style.display =
-      "block";
+      updates[
+        "attendance/" +
+        id +
+        "/" +
+        currentMode
+      ] = now;
 
-    document.getElementById(
-      "completeMessage"
-    ).textContent =
-      currentMode === "entry"
-      ? "入場完了"
-      : "受付完了";
 
-    document.getElementById(
-      "alreadyMessage"
-    ).style.display =
-      "none";
-
-    document.getElementById(
-      "resultTime"
-    ).textContent =
-      (
-        currentMode === "entry"
-        ? "入場時刻："
-        : "受付時刻："
-      ) +
-      formatDateTime(
-        now
+      await update(
+        ref(database),
+        updates
       );
 
-    document.getElementById(
-      "scanStatus"
-    ).textContent =
-      currentMode === "entry"
-      ? "入場登録しました"
-      : "受付登録しました";
 
-    updateSummary();
+      document.getElementById(
+        "completeMessage"
+      ).style.display =
+        "block";
 
-    renderList();
+      document.getElementById(
+        "completeMessage"
+      ).textContent =
+        currentMode === "entry"
+          ? "入場完了"
+          : "受付完了";
+
+
+      document.getElementById(
+        "alreadyMessage"
+      ).style.display =
+        "none";
+
+
+      document.getElementById(
+        "resultTime"
+      ).textContent =
+        (
+          currentMode === "entry"
+            ? "入場時刻："
+            : "受付時刻："
+        ) +
+        formatDateTime(now);
+
+
+      document.getElementById(
+        "scanStatus"
+      ).textContent =
+        currentMode === "entry"
+          ? "入場登録しました"
+          : "受付登録しました";
+
+
+    } catch (error) {
+
+      showError(
+        "Firebaseへの保存に失敗しました。\n\n" +
+        "通信状態を確認してください。\n\n" +
+        String(error)
+      );
+
+      await stopScanner();
+
+      document.getElementById(
+        "nextButton"
+      ).style.display =
+        "block";
+
+      return;
+
+    }
 
   }
+
 
   document.getElementById(
     "result"
   ).style.display =
     "block";
 
+
   document.getElementById(
     "nextButton"
   ).style.display =
     "block";
 
-  stopScanner();
+
+  await stopScanner();
 
 }
 
 
-/* ================================
+/* =====================================
    集計
-================================ */
+===================================== */
 
 function updateSummary() {
-
-  const records =
-    getRecords();
 
   const ids =
     Object.keys(
@@ -1175,35 +1312,36 @@ function updateSummary() {
 
   let receptionCount = 0;
 
+
   ids.forEach(
     id => {
 
-      if (
-        records[id] &&
-        records[id].entry
-      ) {
+      const record =
+        sharedRecords[id] || {};
+
+      if (record.entry) {
         entryCount++;
       }
 
-      if (
-        records[id] &&
-        records[id].reception
-      ) {
+      if (record.reception) {
         receptionCount++;
       }
 
     }
   );
 
+
   document.getElementById(
     "totalCount"
   ).textContent =
     ids.length;
 
+
   document.getElementById(
     "entryCount"
   ).textContent =
     entryCount;
+
 
   document.getElementById(
     "receptionCount"
@@ -1213,9 +1351,9 @@ function updateSummary() {
 }
 
 
-/* ================================
-   一覧表示
-================================ */
+/* =====================================
+   一覧
+===================================== */
 
 function renderList() {
 
@@ -1233,19 +1371,16 @@ function renderList() {
     (
       document.getElementById(
         "searchInput"
-      ).value ||
-      ""
+      ).value || ""
     )
-    .trim()
-    .toLowerCase();
+      .trim()
+      .toLowerCase();
 
-  const records =
-    getRecords();
 
-  tbody.innerHTML =
-    "";
+  tbody.innerHTML = "";
 
   let shown = 0;
+
 
   Object.keys(
     participants
@@ -1256,10 +1391,8 @@ function renderList() {
         participants[id];
 
       const record =
-        records[id] || {
-          entry: null,
-          reception: null
-        };
+        sharedRecords[id] || {};
+
 
       const searchable =
         (
@@ -1270,37 +1403,41 @@ function renderList() {
           id
         ).toLowerCase();
 
+
       if (
         search &&
-        !searchable.includes(
-          search
-        )
+        !searchable.includes(search)
       ) {
         return;
       }
 
+
       if (
         currentFilter ===
-        "notEntry" &&
+          "notEntry" &&
         record.entry
       ) {
         return;
       }
 
+
       if (
         currentFilter ===
-        "notReception" &&
+          "notReception" &&
         record.reception
       ) {
         return;
       }
 
+
       shown++;
+
 
       const tr =
         document.createElement(
           "tr"
         );
+
 
       const nameTd =
         document.createElement(
@@ -1323,7 +1460,7 @@ function renderList() {
         "center";
 
       siteTd.textContent =
-        person.site;
+        person.site || "－";
 
 
       const entryTd =
@@ -1335,14 +1472,14 @@ function renderList() {
         "center " +
         (
           record.entry
-          ? "markYes"
-          : "markNo"
+            ? "markYes"
+            : "markNo"
         );
 
       entryTd.textContent =
         record.entry
-        ? "○"
-        : "－";
+          ? "○"
+          : "－";
 
 
       const receptionTd =
@@ -1354,35 +1491,22 @@ function renderList() {
         "center " +
         (
           record.reception
-          ? "markYes"
-          : "markNo"
+            ? "markYes"
+            : "markNo"
         );
 
       receptionTd.textContent =
         record.reception
-        ? "○"
-        : "－";
+          ? "○"
+          : "－";
 
 
-      tr.appendChild(
-        nameTd
-      );
+      tr.appendChild(nameTd);
+      tr.appendChild(siteTd);
+      tr.appendChild(entryTd);
+      tr.appendChild(receptionTd);
 
-      tr.appendChild(
-        siteTd
-      );
-
-      tr.appendChild(
-        entryTd
-      );
-
-      tr.appendChild(
-        receptionTd
-      );
-
-      tbody.appendChild(
-        tr
-      );
+      tbody.appendChild(tr);
 
     }
   );
@@ -1390,22 +1514,21 @@ function renderList() {
 
   empty.style.display =
     shown === 0
-    ? "block"
-    : "none";
+      ? "block"
+      : "none";
 
 }
 
 
-/* ================================
-   一覧フィルター
-================================ */
+/* =====================================
+   フィルター
+===================================== */
 
-function setFilter(
-  filter
-) {
+function setFilter(filter) {
 
   currentFilter =
     filter;
+
 
   document
     .querySelectorAll(
@@ -1419,9 +1542,7 @@ function setFilter(
     );
 
 
-  if (
-    filter === "all"
-  ) {
+  if (filter === "all") {
 
     document.getElementById(
       "filterAll"
@@ -1432,9 +1553,7 @@ function setFilter(
   }
 
 
-  if (
-    filter === "notEntry"
-  ) {
+  if (filter === "notEntry") {
 
     document.getElementById(
       "filterNotEntry"
@@ -1445,9 +1564,7 @@ function setFilter(
   }
 
 
-  if (
-    filter === "notReception"
-  ) {
+  if (filter === "notReception") {
 
     document.getElementById(
       "filterNotReception"
@@ -1463,18 +1580,14 @@ function setFilter(
 }
 
 
-/* ================================
+/* =====================================
    日時
-================================ */
+===================================== */
 
-function formatDateTime(
-  isoString
-) {
+function formatDateTime(value) {
 
   const date =
-    new Date(
-      isoString
-    );
+    new Date(value);
 
   const month =
     date.getMonth() + 1;
@@ -1511,22 +1624,22 @@ function formatDateTime(
 }
 
 
-/* ================================
-   カメラ起動
-================================ */
+/* =====================================
+   カメラ
+===================================== */
 
 async function startScanner() {
 
-  if (
-    scannerRunning
-  ) {
+  if (scannerRunning) {
     return;
   }
+
 
   alreadyRead =
     false;
 
   clearScanScreen();
+
 
   document.getElementById(
     "scanStatus"
@@ -1552,7 +1665,8 @@ async function startScanner() {
 
     const cameras =
       await Html5Qrcode
-      .getCameras();
+        .getCameras();
+
 
     if (
       !cameras ||
@@ -1580,9 +1694,9 @@ async function startScanner() {
 
       const label =
         (
-          cameras[i].label ||
-          ""
+          cameras[i].label || ""
         ).toLowerCase();
+
 
       if (
         label.includes("back") ||
@@ -1607,21 +1721,25 @@ async function startScanner() {
       );
 
 
+    scannerRunning =
+      true;
+
+
     await html5QrCode.start(
 
       selectedCamera,
 
       {
-        fps: 10
+        fps: 10,
+        qrbox: {
+          width: 250,
+          height: 250
+        }
       },
 
-      function(
-        decodedText
-      ) {
+      function(decodedText) {
 
-        if (
-          alreadyRead
-        ) {
+        if (alreadyRead) {
           return;
         }
 
@@ -1634,30 +1752,22 @@ async function startScanner() {
 
       },
 
-      function(
-        errorMessage
-      ) {
+      function() {
 
       }
 
     );
 
 
-    scannerRunning =
-      true;
-
-
     document.getElementById(
       "scanStatus"
     ).textContent =
       currentMode === "entry"
-      ? "入場QRを読み取ってください"
-      : "受付QRを読み取ってください";
+        ? "入場QRを読み取ってください"
+        : "受付QRを読み取ってください";
 
 
-  } catch (
-    error
-  ) {
+  } catch (error) {
 
     scannerRunning =
       false;
@@ -1670,6 +1780,7 @@ async function startScanner() {
         String(error)
       );
 
+
     showError(
       "カメラを起動できませんでした。\n\n" +
       "エラー内容：\n" +
@@ -1681,9 +1792,9 @@ async function startScanner() {
 }
 
 
-/* ================================
+/* =====================================
    カメラ停止
-================================ */
+===================================== */
 
 async function stopScanner() {
 
@@ -1696,25 +1807,28 @@ async function stopScanner() {
 
   }
 
+
   try {
 
-    if (
-      scannerRunning
-    ) {
+    if (scannerRunning) {
 
       await html5QrCode.stop();
 
     }
 
   } catch (error) {
+
   }
+
 
   try {
 
     html5QrCode.clear();
 
   } catch (error) {
+
   }
+
 
   html5QrCode =
     null;
@@ -1725,9 +1839,9 @@ async function stopScanner() {
 }
 
 
-/* ================================
-   次のQR
-================================ */
+/* =====================================
+   次の受付
+===================================== */
 
 async function nextScan() {
 
@@ -1740,9 +1854,9 @@ async function nextScan() {
 }
 
 
-/* ================================
+/* =====================================
    表示リセット
-================================ */
+===================================== */
 
 function clearScanScreen() {
 
@@ -1769,13 +1883,11 @@ function clearScanScreen() {
 }
 
 
-/* ================================
+/* =====================================
    エラー
-================================ */
+===================================== */
 
-function showError(
-  message
-) {
+function showError(message) {
 
   document.getElementById(
     "error"
@@ -1795,36 +1907,19 @@ function showError(
 }
 
 
-/* ================================
-   全記録リセット
-================================ */
+/* =====================================
+   Firebase記録全リセット
+===================================== */
 
 async function resetAllRecords() {
 
-  const records =
-    getRecords();
-
-  let recordCount = 0;
-
-  Object.keys(
-    records
-  ).forEach(
-    id => {
-
-      if (
-        records[id].entry ||
-        records[id].reception
-      ) {
-        recordCount++;
-      }
-
-    }
-  );
+  const count =
+    Object.keys(
+      sharedRecords
+    ).length;
 
 
-  if (
-    recordCount === 0
-  ) {
+  if (count === 0) {
 
     alert(
       "現在、入場・受付記録はありません。"
@@ -1837,8 +1932,8 @@ async function resetAllRecords() {
 
   const first =
     confirm(
-      "入場・受付記録をすべてリセットします。\n\n" +
-      "テスト終了後以外は実行しないでください。\n\n" +
+      "Firebaseに保存されている入場・受付記録をすべてリセットします。\n\n" +
+      "iPhone・iPad両方の記録が消えます。\n\n" +
       "続けますか？"
     );
 
@@ -1850,7 +1945,7 @@ async function resetAllRecords() {
 
   const second =
     confirm(
-      "本当にすべての記録を削除しますか？\n\n" +
+      "本当にすべて削除しますか？\n\n" +
       "この操作は元に戻せません。"
     );
 
@@ -1860,31 +1955,62 @@ async function resetAllRecords() {
   }
 
 
-  await stopScanner();
+  try {
+
+    await stopScanner();
+
+    await remove(
+      ref(
+        database,
+        "attendance"
+      )
+    );
+
+    clearScanScreen();
+
+    alert(
+      "入場・受付記録をすべてリセットしました。"
+    );
 
 
-  localStorage.removeItem(
-    "sbcmtRecords"
-  );
+  } catch (error) {
 
+    alert(
+      "リセットに失敗しました。\n\n" +
+      String(error)
+    );
 
-  updateSummary();
-
-  renderList();
-
-  clearScanScreen();
-
-
-  alert(
-    "入場・受付記録をリセットしました。\n\n本番受付を開始できます。"
-  );
+  }
 
 }
 
 
-/* ================================
+/* =====================================
+   HTMLから呼び出せるようにする
+===================================== */
+
+window.changePage =
+  changePage;
+
+window.startScanner =
+  startScanner;
+
+window.nextScan =
+  nextScan;
+
+window.setFilter =
+  setFilter;
+
+window.renderList =
+  renderList;
+
+window.resetAllRecords =
+  resetAllRecords;
+
+
+/* =====================================
    起動
-================================ */
+===================================== */
 
 window.addEventListener(
   "DOMContentLoaded",
